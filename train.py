@@ -17,9 +17,10 @@ def train():
 
         sample_ = biotacsp_dataset_[i]
         log.info(sample_)
+        biotacsp_dataset_.plot(sample_)
 
 if __name__ == "__main__":
 
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     train()
