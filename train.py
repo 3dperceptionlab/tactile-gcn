@@ -1,7 +1,12 @@
 import logging
 import sys
 
+import torch
+
+from torch_geometric.data import Data
+
 import loader.biotacsp_loader
+import transforms.tograph
 
 log = logging.getLogger(__name__)
 
@@ -11,6 +16,9 @@ def train():
 
     biotacsp_dataset_ = loader.biotacsp_loader.BioTacSpDataset(csvFile=CSV_FILE)
 
+    # Transformations
+    transform_tograph_ = transforms.tograph.ToGraph(biotacsp_dataset_.m_taxels_x, biotacsp_dataset_.m_taxels_y)
+
     log.info(biotacsp_dataset_)
 
     for i in range(len(biotacsp_dataset_)):
@@ -18,6 +26,9 @@ def train():
         sample_ = biotacsp_dataset_[i]
         log.info(sample_)
         biotacsp_dataset_.plot(sample_)
+
+        graph_sample_ = transform_tograph_(sample_)
+
 
 if __name__ == "__main__":
 

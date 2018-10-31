@@ -29,7 +29,19 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 
 	def __getitem__(self, idx):
 
-		return self.m_grasps.iloc[idx]
+		sample_ = self.m_grasps.iloc[idx]
+
+		object_ = sample_.iloc[0]
+		slipped_ = sample_.iloc[1]
+		data_index_ = np.copy(sample_.iloc[2:26]).astype(np.int, copy=False)
+		data_middle_ = np.copy(sample_.iloc[26:50]).astype(np.int, copy=False)
+		data_thumb_ = np.copy(sample_.iloc[50:75]).astype(np.int, copy=False)
+
+		return {'object': object_,
+				'slipped': slipped_,
+				'data_index': data_index_,
+				'data_middle': data_middle_,
+				'data_thumb': data_thumb_}
 
 	def __repr__(self):
 
@@ -39,20 +51,6 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 		)
 
 	def plot(self, sample):
-
-		index_z_ = np.zeros(24)
-		middle_z_ = np.zeros(24)
-		thumb_z_ = np.zeros(24)
-
-		# Indices 2-26 contain index PAC
-		index_z_ = np.copy(sample.iloc[2:26])
-		log.debug(index_z_)
-		# Indices 27-51 contain middle PAC
-		middle_z_ = np.copy(sample.iloc[26:50])
-		log.debug(middle_z_)
-		# Indices 52-76 contain thumb PAC
-		thumb_z_ = np.copy(sample.iloc[50:75])
-		log.debug(thumb_z_)
 
 		x_i_ = np.linspace(min(self.m_taxels_x), max(self.m_taxels_x))
 		y_i_ = np.linspace(min(self.m_taxels_y), max(self.m_taxels_y))
@@ -64,7 +62,7 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 		figure_, axes_ = plt.subplots(ncols=3, sharex=True, sharey=True)
 		(ax0_, ax1_, ax2_) = axes_
 
-		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, index_z_, x_i_, y_i_, interp='linear')
+		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, sample['data_index'], x_i_, y_i_, interp='linear')
 
 		cf0_ = ax0_.contourf(x_, y_, z_, 20, levels=levels_)
 		ax0_.set(aspect='equal')
@@ -75,7 +73,7 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 		ax0_.set_ylabel('Vertical Position [mm]')
 		ax0_.set_xlabel('Horizontal Position [mm]')
 
-		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, middle_z_, x_i_, y_i_, interp='linear')
+		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, sample['data_middle'], x_i_, y_i_, interp='linear')
 
 		cf1_ = ax1_.contourf(x_, y_, z_, 20, levels=levels_)
 		ax1_.set(aspect='equal')
@@ -85,7 +83,7 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 		ax1_.set_title('Middle Finger')
 		ax1_.set_xlabel('Horizontal Position [mm]')
 
-		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, thumb_z_, x_i_, y_i_, interp='linear')
+		z_ = matplotlib.mlab.griddata(self.m_taxels_x, self.m_taxels_y, sample['data_thumb'], x_i_, y_i_, interp='linear')
 
 		cf2_ = ax2_.contourf(x_, y_, z_, 20, levels=levels_)
 		ax2_.set(aspect='equal')
