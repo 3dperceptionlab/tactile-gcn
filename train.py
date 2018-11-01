@@ -7,6 +7,7 @@ from torch_geometric.data import Data
 
 import loader.biotacsp_loader
 import transforms.tograph
+import utils.plotgraph
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +29,10 @@ def train():
         biotacsp_dataset_.plot(sample_)
 
         graph_sample_ = transform_tograph_(sample_)
+
+        utils.plotgraph.plot_graph(graph_sample_)
+
+
 
 
 if __name__ == "__main__":
