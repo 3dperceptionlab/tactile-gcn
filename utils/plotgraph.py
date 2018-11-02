@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sbs
+import matplotlib.mlab
 import torch
 from torch_geometric.data import Data
 
@@ -57,6 +57,61 @@ def plot_graph(sample):
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger')
     ax2_.set_ylabel('Vertical Position [mm]')
+    ax2_.set_xlabel('Horizontal Position [mm]')
+
+    figure_.tight_layout()
+
+    figure_.colorbar(cf2_, ax=axes_.ravel().tolist(), orientation='horizontal')
+
+    plt.show()
+
+def plot_contourgraph(sample):
+
+    x_i_ = np.linspace(min(sample['data_index'].pos[0]), max(sample['data_index'].pos[0]))
+    y_i_ = np.linspace(min(sample['data_index'].pos[1]), max(sample['data_index'].pos[1]))
+    x_, y_ = np.meshgrid(x_i_, y_i_)
+    levels_ = np.linspace(0, 4096, 64)
+    xtics_ = np.arange(-4.0, 5.0, step=1.0)
+    ytics_ = np.arange(-6.0, 6.0, step=1.0)
+
+    figure_, axes_ = plt.subplots(ncols=3, sharex=True, sharey=True)
+    (ax0_, ax1_, ax2_) = axes_
+
+    z_ = matplotlib.mlab.griddata(sample['data_index'].pos[0], sample['data_index'].pos[1], sample['data_index'].x, x_i_, y_i_, interp='linear')
+
+    cf0_ = ax0_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax0_.scatter(sample['data_index'].pos[0], sample['data_index'].pos[1], s=sample['data_index'].x / 3.0, c=sample['data_index'].x, vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax0_, sample['data_index'].pos, sample['data_index'].edge_index)
+    ax0_.set(aspect='equal')
+    ax0_.grid()
+    ax0_.set_xticks(xtics_)
+    ax0_.set_yticks(ytics_)
+    ax0_.set_title('Index Finger')
+    ax0_.set_ylabel('Vertical Position [mm]')
+    ax0_.set_xlabel('Horizontal Position [mm]')
+
+    z_ = matplotlib.mlab.griddata(sample['data_middle'].pos[0], sample['data_middle'].pos[1], sample['data_middle'].x, x_i_, y_i_, interp='linear')
+
+    cf1_ = ax1_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax1_.scatter(sample['data_middle'].pos[0], sample['data_middle'].pos[1], s=sample['data_middle'].x / 3.0, c=sample['data_middle'].x, vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax1_, sample['data_middle'].pos, sample['data_middle'].edge_index)
+    ax1_.set(aspect='equal')
+    ax1_.grid()
+    ax1_.set_xticks(xtics_)
+    ax1_.set_yticks(ytics_)
+    ax1_.set_title('Middle Finger')
+    ax1_.set_xlabel('Horizontal Position [mm]')
+
+    z_ = matplotlib.mlab.griddata(sample['data_thumb'].pos[0], sample['data_thumb'].pos[1], sample['data_thumb'].x, x_i_, y_i_, interp='linear')
+
+    cf2_ = ax2_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax2_.scatter(sample['data_thumb'].pos[0], sample['data_thumb'].pos[1], s=sample['data_thumb'].x / 3.0, c=sample['data_thumb'].x, vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax2_, sample['data_thumb'].pos, sample['data_thumb'].edge_index)
+    ax2_.set(aspect='equal')
+    ax2_.grid()
+    ax2_.set_xticks(xtics_)
+    ax2_.set_yticks(ytics_)
+    ax2_.set_title('Thumb Finger')
     ax2_.set_xlabel('Horizontal Position [mm]')
 
     figure_.tight_layout()
