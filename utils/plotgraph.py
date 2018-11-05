@@ -18,9 +18,6 @@ def plot_edges(axis, pos, edgeIndex):
         end_tuple_ = (pos[1][edgeIndex[0][i]],
                         pos[1][edgeIndex[1][i]])
 
-        log.info(origin_tuple_)
-        log.info(end_tuple_)
-
         axis.plot(origin_tuple_, end_tuple_, '-k')
 
 def plot_graph(sample):
@@ -107,6 +104,69 @@ def plot_contourgraph(sample):
     cf2_ = ax2_.contourf(x_, y_, z_, 20, levels=levels_)
     ax2_.scatter(sample['data_thumb'].pos[0], sample['data_thumb'].pos[1], s=sample['data_thumb'].x / 3.0, c=sample['data_thumb'].x, vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
     plot_edges(ax2_, sample['data_thumb'].pos, sample['data_thumb'].edge_index)
+    ax2_.set(aspect='equal')
+    ax2_.grid()
+    ax2_.set_xticks(xtics_)
+    ax2_.set_yticks(ytics_)
+    ax2_.set_title('Thumb Finger')
+    ax2_.set_xlabel('Horizontal Position [mm]')
+
+    figure_.tight_layout()
+
+    figure_.colorbar(cf2_, ax=axes_.ravel().tolist(), orientation='horizontal')
+
+    plt.show()
+
+def plot_contourgraph_batch(pos, x, y, edgeIndex):
+
+    x_i_ = np.linspace(min(pos[0]), max(pos[0]))
+    y_i_ = np.linspace(min(pos[1]), max(pos[1]))
+    x_, y_ = np.meshgrid(x_i_, y_i_)
+    levels_ = np.linspace(0, 4096, 64)
+    xtics_ = np.arange(-4.0, 5.0, step=1.0)
+    ytics_ = np.arange(-6.0, 6.0, step=1.0)
+
+    figure_, axes_ = plt.subplots(ncols=3, sharex=True, sharey=True)
+    (ax0_, ax1_, ax2_) = axes_
+
+    log.debug(pos[0].size())
+    log.debug(pos[1].size())
+    log.debug(x.size())
+    log.debug(x[0])
+    log.debug(x[1])
+
+    log.debug(edgeIndex)
+    
+    z_ = matplotlib.mlab.griddata(pos[0], pos[1], x[0], x_i_, y_i_, interp='linear')
+
+    cf0_ = ax0_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax0_.scatter(pos[0], pos[1], s=x[0] / 3.0, c=x[0], vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax0_, pos, edgeIndex)
+    ax0_.set(aspect='equal')
+    ax0_.grid()
+    ax0_.set_xticks(xtics_)
+    ax0_.set_yticks(ytics_)
+    ax0_.set_title('Index Finger')
+    ax0_.set_ylabel('Vertical Position [mm]')
+    ax0_.set_xlabel('Horizontal Position [mm]')
+
+    z_ = matplotlib.mlab.griddata(pos[0], pos[1], x[1], x_i_, y_i_, interp='linear')
+
+    cf1_ = ax1_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax1_.scatter(pos[0], pos[1], s=x[1] / 3.0, c=x[1], vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax1_, pos, edgeIndex)
+    ax1_.set(aspect='equal')
+    ax1_.grid()
+    ax1_.set_xticks(xtics_)
+    ax1_.set_yticks(ytics_)
+    ax1_.set_title('Middle Finger')
+    ax1_.set_xlabel('Horizontal Position [mm]')
+
+    z_ = matplotlib.mlab.griddata(pos[0], pos[1], x[2], x_i_, y_i_, interp='linear')
+
+    cf2_ = ax2_.contourf(x_, y_, z_, 20, levels=levels_)
+    ax2_.scatter(pos[0], pos[1], s=x[2] / 3.0, c=x[2], vmin=0, vmax=4096, alpha=0.5, edgecolors='b', linewidth=1)
+    plot_edges(ax2_, pos, edgeIndex)
     ax2_.set(aspect='equal')
     ax2_.grid()
     ax2_.set_xticks(xtics_)

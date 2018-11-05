@@ -11,16 +11,14 @@ log = logging.getLogger(__name__)
 class BioTacSpDataset(torch.utils.data.Dataset):
 	"""BioTacSp Grasping Dataset"""
 
-	def __init__(self, csvFile):
+	def __init__(self, csvFile, transform=None):
 		"""
 		Args:
 			csvFile (string): Path to the CSV file with annotations.
 		"""
 		self.m_csv_file = csvFile
 		self.m_grasps = pd.read_csv("data/" + self.m_csv_file)
-
-		self.m_taxels_x = [-3.0, -2.0, -4.0, -2.5, -1.5, -4.0, -2.5, -0.5, -2.0, -2.5, 3.0, 2.0, 4.0, 2.5, 1.5, 4.0, 2.5, 0.5, 2.0, 2.5, 0.0, -1.0, 1.0, 0.0]
-		self.m_taxels_y = [5.0, 4.0, 1.0, 0.0, -1.0, -2.0, -3.0, -4.0, -5.0, -6.0, 5.0, 4.0, 1.0, 0.0, -1.0, -2.0, -3.0, -4.0, -5.0, -6.0, 3.0, 2.0, 2.0, 0.0]
+		self.m_transform = transform
 
 	def __len__(self):
 		
@@ -36,11 +34,16 @@ class BioTacSpDataset(torch.utils.data.Dataset):
 		data_middle_ = np.copy(sample_.iloc[26:50]).astype(np.int, copy=False)
 		data_thumb_ = np.copy(sample_.iloc[50:75]).astype(np.int, copy=False)
 
-		return {'object': object_,
-				'slipped': slipped_,
-				'data_index': data_index_,
-				'data_middle': data_middle_,
-				'data_thumb': data_thumb_}
+		sample_ = {'object': object_,
+							'slipped': slipped_,
+							'data_index': data_index_,
+							'data_middle': data_middle_,
+							'data_thumb': data_thumb_}
+
+		if self.m_transform:
+			sample_ = self.m_transform(sample_)
+
+		return sample_
 
 	def __repr__(self):
 
