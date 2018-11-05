@@ -22,7 +22,7 @@ def train():
     transform_tograph_ = transforms.tograph.ToGraph()
 
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='~/Workspace/3dpl/tactile-gcn/data/biotacsp')
-    biotacsp_loader_ = DataLoader(biotacsp_dataset_, batch_size=4, shuffle=True, num_workers=4)
+    biotacsp_loader_ = DataLoader(biotacsp_dataset_, batch_size=2, shuffle=False, num_workers=1)
 
     # Transformations
 
@@ -30,15 +30,20 @@ def train():
 
     for batch in biotacsp_loader_:
         
-        batch
-        #sample_ = biotacsp_dataset_[i]
-        #log.info(sample_)
-        #utils.plotcontour.plot_contour(sample_, biotacsp_dataset_.m_taxels_x, biotacsp_dataset_.m_taxels_y)
+        log.info(batch)
+        log.info("Batch size {}".format(batch.num_graphs))
 
-        #graph_sample_ = transform_tograph_(sample_)
+        log.info(batch['edge_index'][0])
+        log.info(batch['edge_index'][1])
+        log.info(batch['y'])
 
-        #utils.plotgraph.plot_contourgraph(graph_sample_)
-        #utils.plotgraph.plot_graph(graph_sample_)
+        for i in range(batch.num_graphs):
+                pos_ = batch['pos'][i*2: 2 + i*2, :]
+                x_ = batch['x'][i*3: 3 + i*3, :]
+                y_ = batch['y'][i:i]
+                edge_index_ = batch['edge_index'][:,i*66:66+i*66] - 3*i
+
+                utils.plotgraph.plot_contourgraph_batch(pos_, x_, y_, edge_index_)
 
 if __name__ == "__main__":
 

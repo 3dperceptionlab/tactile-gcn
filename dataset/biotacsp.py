@@ -44,21 +44,21 @@ class BioTacSp(InMemoryDataset):
     data_list_ = []
     for i in range(len(grasps_)):
       
-      sample_ = self.sample_from_csv(grasps_, i)
+      sample_ = self._sample_from_csv(grasps_, i)
       sample_ = transform_tograph_(sample_)
+
+      log.debug(sample_)
 
       if self.pre_transform is not None:
         sample_ = self.pre_transform(sample_)
 
       data_list_.append(sample_)
 
-    log.debug(data_list_[0].keys())
+    data_ = self.collate(data_list_)
 
-    data_, slices_ = self.collate(data_list_)
+    torch.save(data_, self.processed_paths[0])
 
-    torch.save((data_, slices_), self.processed_paths[0])
-
-  def sample_from_csv(self, grasps, idx):
+  def _sample_from_csv(self, grasps, idx):
 
     sample_ = grasps.iloc[idx]
     
