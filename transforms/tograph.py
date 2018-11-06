@@ -18,10 +18,10 @@ class ToGraph(object):
     def __call__(self, sample):
 
         # Index finger
-        graph_x_ = torch.tensor(np.vstack((sample['data_index'], sample['data_middle'], sample['data_thumb'])), dtype=torch.float)
+        graph_x_ = torch.tensor(np.vstack((sample['data_index'], sample['data_middle'], sample['data_thumb'])), dtype=torch.float).transpose(0, 1)
         graph_edge_index_ = torch.tensor([self.m_edge_origins, self.m_edge_ends], dtype=torch.long)
-        graph_pos_ = torch.tensor(np.vstack((self.m_taxels_x, self.m_taxels_y)), dtype=torch.float)
-        graph_y_ = torch.tensor([sample['slipped']], dtype=torch.int)
+        graph_pos_ = torch.tensor(np.vstack((self.m_taxels_x, self.m_taxels_y)), dtype=torch.float).transpose(0, 1)
+        graph_y_ = torch.tensor([sample['slipped']], dtype=torch.long)
 
         data_ = Data(x = graph_x_,
                     edge_index = graph_edge_index_,
