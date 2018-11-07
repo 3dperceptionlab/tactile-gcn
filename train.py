@@ -33,18 +33,18 @@ class Net(torch.nn.Module):
         self.fc1 = torch.nn.Linear(64, numClasses)
 
     def forward(self, data):
-        x = F.relu(self.conv1(data.x, data.edge_index))
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, data.edge_index)
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.dropout(data.x, training=self.training)
+        data.x = self.conv2(data.x, data.edge_index)
 
         weight = normalized_cut_2d(data.edge_index, data.pos)
-        cluster = graclus(data.edge_index, weight, x.size(0))
-        x, batch = max_pool_x(cluster, x, data.batch)
-        x = global_mean_pool(x, batch)
+        cluster = graclus(data.edge_index, weight, data.x.size(0))
+        data.x, batch = max_pool_x(cluster, data.x, data.batch)
+        data.x = global_mean_pool(data.x, batch)
 
-        x = self.fc1(x)
-        x = F.log_softmax(x, dim=1)
-        return x
+        data.x = self.fc1(data.x)
+        data.x = F.log_softmax(data.x, dim=1)
+        return data.x
 
 def visualize_batch(batch):
 
@@ -68,7 +68,7 @@ def visualize_batch(batch):
 
 def train():
 
-    BATCH_SIZE = 2
+    BATCH_SIZE = 1
 
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp')
     biotacsp_loader_ = DataLoader(
@@ -82,7 +82,7 @@ def train():
     model_ = Net(biotacsp_dataset_.data.num_features, biotacsp_dataset_.data.num_classes).to(device_)
     log.info(model_)
 
-    optimizer_ = torch.optim.Adam(model_.parameters(), lr=0.01, weight_decay=5e-4)
+    optimizer_ = torch.optim.Adam(model_.parameters(), lr=0.0001, weight_decay=5e-4)
     log.info(optimizer_)
     
     for epoch in range(32):
@@ -92,18 +92,10 @@ def train():
         model_.train()
         loss_all = 0
 
-        if epoch == 6:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = 0.001
-
-        if epoch == 16:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = 0.0001
-
         i = 1
         for batch in biotacsp_loader_:
 
-            log.info("Training batch {0} of {1}".format(i, len(biotacsp_dataset_)/BATCH_SIZE))
+            #log.info("Training batch {0} of {1}".format(i, len(biotacsp_dataset_)/BATCH_SIZE))
 
             batch = batch.to(device_)
             optimizer_.zero_grad()
@@ -114,6 +106,19 @@ def train():
             optimizer_.step()
 
             i+=1
+
+        model_.eval()
+        correct_ = 0
+
+        for batch in biotacsp_loader_:
+
+            batch = batch.to(device_)
+            pred_ = model_(batch).max(1)[1]
+            correct_ += pred_.eq(batch.y).sum().item()
+
+        correct_ /= len(biotacsp_dataset_)
+
+        log.info("Training accuracy {0}".format(correct_))
 
 if __name__ == "__main__":
 
