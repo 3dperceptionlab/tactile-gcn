@@ -1,5 +1,18 @@
+__author__      = "Alberto Garcia-Garcia and Brayan Zapata-Impata"
+__copyright__   = "Copyright 2018, 3D Perception Lab"
+__credits__     = ["Alberto Garcia-Garcia",
+                    "Brayan Zapata-Impata"]
+
+__license__     = "MIT"
+__version__     = "1.0"
+__maintainer__  = "Alberto Garcia-Garcia"
+__email__       = "agarcia@dtic.ua.es"
+__status__ = "Development"
+
+import argparse
 import logging
 import sys
+from timeit import default_timer as timer
 
 import torch
 import torch.nn.functional as F
@@ -66,28 +79,33 @@ def visualize_batch(batch):
         utils.plotgraph.plot_contourgraph_batch(pos_, x_, y_, edge_index_)
 
 
-def train():
+def train(args):
 
-    BATCH_SIZE = 1
-
+    ## Dataset and loader
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp')
     biotacsp_loader_ = DataLoader(
-        biotacsp_dataset_, batch_size=BATCH_SIZE, shuffle=False, num_workers=1)
+        biotacsp_dataset_, batch_size=args.batch_size, shuffle=False, num_workers=1)
     log.info(biotacsp_dataset_)
+    log.info("Batch size is {0}".format(args.batch_size))
 
+    ## Select CUDA device
     device_ = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     log.info(device_)
     log.info(torch.cuda.get_device_name(0))
 
+    ## Build model
     model_ = Net(biotacsp_dataset_.data.num_features, biotacsp_dataset_.data.num_classes).to(device_)
     log.info(model_)
 
-    optimizer_ = torch.optim.Adam(model_.parameters(), lr=0.0001, weight_decay=5e-4)
+    ## Optimizer
+    optimizer_ = torch.optim.Adam(model_.parameters(), lr=args.lr, weight_decay=5e-4)
     log.info(optimizer_)
-    
-    for epoch in range(32):
 
-        log.info("Training epoch {0}".format(epoch))
+    time_start_ = timer()
+    
+    for epoch in range(args.epochs):
+
+        log.info("Training epoch {0} out of {1}".format(epoch, args.epochs))
 
         model_.train()
         loss_all = 0
@@ -120,8 +138,18 @@ def train():
 
         log.info("Training accuracy {0}".format(correct_))
 
+    time_end_ = timer()
+    log.info("Training took {0} seconds".format(time_end_ - time_start_))
+
 if __name__ == "__main__":
 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    train()
+    parser_ = argparse.ArgumentParser(description="Parameters")
+    parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
+    parser_.add_argument("--lr", nargs="?", type=float, default=0.0001, help="Learning Rate")
+    parser_.add_argument("--epochs", nargs="?", type=int, default=32, help="Training Epochs")
+
+    args_ = parser_.parse_args()
+
+    train(args_)
