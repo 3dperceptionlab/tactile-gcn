@@ -14,10 +14,12 @@ import logging
 import sys
 from timeit import default_timer as timer
 
+import numpy as np
+
 import torch
 import torch.nn.functional as F
 import torch.utils.data.dataloader
-
+from torch.utils.data.sampler import SubsetRandomSampler
 from torch_geometric.data import Data
 from torch_geometric.data import DataLoader
 from torch_geometric.nn import GCNConv, ChebConv # noqa
@@ -78,14 +80,62 @@ def visualize_batch(batch):
 
         utils.plotgraph.plot_contourgraph_batch(pos_, x_, y_, edge_index_)
 
+def generate_balanced_train_test_splits(dataset, random_seed=32, split=0.2):
+
+    log.info("Generating balanced train/test splits...")
+
+    train_indices_ = []
+    test_indices_ = []
+    train_class_count_ = {}
+    test_class_count_ = {}
+
+    num_samples_ = len(dataset)
+    indices_ = list(range(num_samples_))
+    num_samples_test_ = int(np.floor(split * num_samples_))
+
+    log.info("Dataset has {0} elements...".format(num_samples_))
+    log.info("Split is {0}".format(split))
+    log.info("Testing split will contain {0} samples".format(num_samples_test_))
+
+    test_class_count_target_ = np.floor(dataset.class_weights * num_samples_test_)
+
+    log.info("The target distribution for the test set is {0}".format(test_class_count_target_))
+
+    np.random.seed(random_seed)
+    np.random.shuffle(indices_)
+
+    for i in range(len(indices_)):
+        
+        label_ = dataset[i].y.item()
+
+        if test_class_count_target_[label_] > test_class_count_.get(label_, 0):
+            test_indices_.append(indices_[i])
+            test_class_count_[label_] = test_class_count_.get(label_, 0) + 1
+        else:
+            train_indices_.append(indices_[i])
+            train_class_count_[label_] = train_class_count_.get(label_, 0) + 1
+
+    log.info("Train split contains {0} samples and test split contain {1} samples...".format(len(train_indices_), len(test_indices_)))
+    log.info("Class count on the training split is {0}".format(train_class_count_))
+    log.info("Class count on the test split is {0}".format(test_class_count_))
+
+    return train_indices_, test_indices_
 
 def train(args):
 
-    ## Dataset and loader
+    ## Dataset and loaders
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp')
-    biotacsp_loader_ = DataLoader(
-        biotacsp_dataset_, batch_size=args.batch_size, shuffle=False, num_workers=1)
     log.info(biotacsp_dataset_)
+
+    train_idx_, test_idx_ = generate_balanced_train_test_splits(biotacsp_dataset_)
+    train_sampler_ = SubsetRandomSampler(train_idx_)
+    test_sampler_ = SubsetRandomSampler(test_idx_)
+
+    biotacsp_train_loader_ = DataLoader(
+        biotacsp_dataset_, batch_size=args.batch_size, shuffle=False, sampler=train_sampler_, num_workers=1)
+    biotacsp_test_loader_ = DataLoader(
+        biotacsp_dataset_, batch_size=args.batch_size, shuffle=False, sampler=test_sampler_, num_workers=1)
+
     log.info("Batch size is {0}".format(args.batch_size))
 
     ## Select CUDA device
@@ -111,7 +161,7 @@ def train(args):
         loss_all = 0
 
         i = 1
-        for batch in biotacsp_loader_:
+        for batch in biotacsp_train_loader_:
 
             #log.info("Training batch {0} of {1}".format(i, len(biotacsp_dataset_)/BATCH_SIZE))
 
@@ -128,15 +178,28 @@ def train(args):
         model_.eval()
         correct_ = 0
 
-        for batch in biotacsp_loader_:
+        for batch in biotacsp_train_loader_:
 
             batch = batch.to(device_)
             pred_ = model_(batch).max(1)[1]
             correct_ += pred_.eq(batch.y).sum().item()
 
-        correct_ /= len(biotacsp_dataset_)
+        correct_ /= len(train_idx_)
 
         log.info("Training accuracy {0}".format(correct_))
+
+        model_.eval()
+        correct_ = 0
+
+        for batch in biotacsp_test_loader_:
+
+            batch = batch.to(device_)
+            pred_ = model_(batch).max(1)[1]
+            correct_ += pred_.eq(batch.y).sum().item()
+
+        correct_ /= len(test_idx_)
+
+        log.info("Test accuracy {0}".format(correct_))
 
     time_end_ = timer()
     log.info("Training took {0} seconds".format(time_end_ - time_start_))

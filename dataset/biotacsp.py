@@ -17,9 +17,15 @@ class BioTacSp(InMemoryDataset):
 
     self.data, self.slices = torch.load(self.processed_paths[0])
 
+    # Compute class weights for sampling
+    self.class_weights = np.zeros(2)
+    for i in range(len(self.data['y'])):
+      self.class_weights[self.data['y'][i]] += 1
+    self.class_weights /= len(self.data['y'])
+
   @property
   def raw_file_names(self):
-    return ['biotac-palmdown-grasps.csv']
+    return ['biotac-palmdown-grasps.csv', 'biotac-palmside-grasps.csv']
 
   @property
   def processed_file_names(self):
@@ -39,20 +45,23 @@ class BioTacSp(InMemoryDataset):
     
     transform_tograph_ = transforms.tograph.ToGraph()
 
-    grasps_ = pd.read_csv(self.raw_paths[0])
-
     data_list_ = []
-    for i in range(len(grasps_)):
+
+    for f in range(len(self.raw_paths)):
+
+      log.info("Reading CSV file {0}".format(self.raw_paths[f]))
+
+      grasps_ = pd.read_csv(self.raw_paths[f])
+
+      for i in range(len(grasps_)):
       
-      sample_ = self._sample_from_csv(grasps_, i)
-      sample_ = transform_tograph_(sample_)
+        sample_ = self._sample_from_csv(grasps_, i)
+        sample_ = transform_tograph_(sample_)
 
-      log.debug(sample_)
+        if self.pre_transform is not None:
+          sample_ = self.pre_transform(sample_)
 
-      if self.pre_transform is not None:
-        sample_ = self.pre_transform(sample_)
-
-      data_list_.append(sample_)
+        data_list_.append(sample_)
 
     data_ = self.collate(data_list_)
 
