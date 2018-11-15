@@ -30,6 +30,7 @@ global_mean_pool)
 import loader.biotacsp_loader
 import dataset.biotacsp
 import transforms.tograph
+import utils.plotaccuracies
 import utils.plotcontour
 import utils.plotgraph
 
@@ -151,6 +152,11 @@ def train(args):
     optimizer_ = torch.optim.Adam(model_.parameters(), lr=args.lr, weight_decay=5e-4)
     log.info(optimizer_)
 
+    ## Log accuracies
+    epochs_ = []
+    train_accuracies_ = []
+    test_accuracies_ = []
+
     time_start_ = timer()
     
     for epoch in range(args.epochs):
@@ -185,6 +191,7 @@ def train(args):
             correct_ += pred_.eq(batch.y).sum().item()
 
         correct_ /= len(train_idx_)
+        train_accuracies_.append(correct_)
 
         log.info("Training accuracy {0}".format(correct_))
 
@@ -198,11 +205,16 @@ def train(args):
             correct_ += pred_.eq(batch.y).sum().item()
 
         correct_ /= len(test_idx_)
+        test_accuracies_.append(correct_)
 
         log.info("Test accuracy {0}".format(correct_))
 
+        epochs_.append(epoch)
+
     time_end_ = timer()
     log.info("Training took {0} seconds".format(time_end_ - time_start_))
+
+    utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, test_accuracies_], ["Train Accuracy", "Test Accuracy"])
 
 if __name__ == "__main__":
 
