@@ -37,6 +37,7 @@ import utils.plotconfusionmatrix
 import utils.plotaccuracies
 import utils.plotcontour
 import utils.plotgraph
+import utils.plotlosses
 
 log = logging.getLogger(__name__)
 
@@ -156,10 +157,11 @@ def train(args):
     optimizer_ = torch.optim.Adam(model_.parameters(), lr=args.lr, weight_decay=5e-4)
     log.info(optimizer_)
 
-    ## Log accuracies
+    ## Log accuracies, learning rate, and loss
     epochs_ = []
     train_accuracies_ = []
     test_accuracies_ = []
+    train_losses_ = []
 
     time_start_ = timer()
     
@@ -174,6 +176,7 @@ def train(args):
         for batch in biotacsp_train_loader_:
 
             #log.info("Training batch {0} of {1}".format(i, len(biotacsp_dataset_)/BATCH_SIZE))
+            #visualize_batch(batch)
 
             batch = batch.to(device_)
             optimizer_.zero_grad()
@@ -185,6 +188,10 @@ def train(args):
 
             i+=1
 
+        # Log loss
+        train_losses_.append(loss_all)
+        log.info("Training loss {0}".format(loss_all))
+
         model_.eval()
         correct_ = 0
 
@@ -195,8 +202,9 @@ def train(args):
             correct_ += pred_.eq(batch.y).sum().item()
 
         correct_ /= len(train_idx_)
-        train_accuracies_.append(correct_)
 
+        # Log train accuracy
+        train_accuracies_.append(correct_)
         log.info("Training accuracy {0}".format(correct_))
 
         model_.eval()
@@ -219,6 +227,7 @@ def train(args):
     log.info("Training took {0} seconds".format(time_end_ - time_start_))
 
     utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, test_accuracies_], ["Train Accuracy", "Test Accuracy"])
+    utils.plotlosses.plot_losses(epochs_, [train_losses_], ["Train Loss"])
 
     ## Launch predictions on test and calculate metrics
     test_acc_ = 0.0
