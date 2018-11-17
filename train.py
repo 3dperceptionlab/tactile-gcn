@@ -129,7 +129,7 @@ def generate_balanced_train_test_splits(dataset, random_seed=32, split=0.2):
 def train(args):
 
     ## Dataset and loaders
-    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp')
+    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k)
     log.info(biotacsp_dataset_)
 
     train_idx_, test_idx_ = generate_balanced_train_test_splits(biotacsp_dataset_)
@@ -259,6 +259,7 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     parser_ = argparse.ArgumentParser(description="Parameters")
+    parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
     parser_.add_argument("--lr", nargs="?", type=float, default=0.0001, help="Learning Rate")
     parser_.add_argument("--epochs", nargs="?", type=int, default=32, help="Training Epochs")

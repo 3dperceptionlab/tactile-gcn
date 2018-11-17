@@ -12,7 +12,9 @@ log = logging.getLogger(__name__)
 
 class BioTacSp(InMemoryDataset):
 
-  def __init__(self, root, transform=None, pre_transform=None):
+  def __init__(self, root, k, transform=None, pre_transform=None):
+    self.k = k
+
     super(BioTacSp, self).__init__(root, transform, pre_transform)
 
     self.data, self.slices = torch.load(self.processed_paths[0])
@@ -43,7 +45,7 @@ class BioTacSp(InMemoryDataset):
 
   def process(self):
     
-    transform_tograph_ = transforms.tograph.ToGraph()
+    transform_tograph_ = transforms.tograph.ToGraph(self.k)
 
     data_list_ = []
 
