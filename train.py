@@ -16,6 +16,9 @@ from timeit import default_timer as timer
 
 import numpy as np
 
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix
+
 import torch
 import torch.nn.functional as F
 import torch.utils.data.dataloader
@@ -30,6 +33,7 @@ global_mean_pool)
 import loader.biotacsp_loader
 import dataset.biotacsp
 import transforms.tograph
+import utils.plotconfusionmatrix
 import utils.plotaccuracies
 import utils.plotcontour
 import utils.plotgraph
@@ -215,6 +219,40 @@ def train(args):
     log.info("Training took {0} seconds".format(time_end_ - time_start_))
 
     utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, test_accuracies_], ["Train Accuracy", "Test Accuracy"])
+
+    ## Launch predictions on test and calculate metrics
+    test_acc_ = 0.0
+    test_y_ = []
+    test_pred_ = []
+
+    model_.eval()
+
+    for batch in biotacsp_test_loader_:
+
+        batch = batch.to(device_)
+        pred_ = model_(batch).max(1)[1]
+        test_acc_ += pred_.eq(batch.y).sum().item()
+
+        test_y_.append(batch.y)
+        test_pred_.append(pred_)
+
+    test_acc_ /= len(test_idx_)
+
+    test_prec_, test_rec_, test_fscore_, _ = precision_recall_fscore_support(test_y_, test_pred_, average='binary')
+
+    log.info("Test metrics")
+    log.info("Accuracy: {0}".format(test_acc_))
+    log.info("Precision: {0}".format(test_prec_))
+    log.info("Recall: {0}".format(test_rec_))
+    log.info("F-score: {0}".format(test_fscore_))
+
+    conf_matrix_ = confusion_matrix(test_y_, test_pred_)
+
+    ## Plot non-normalized confusion matrix
+    utils.plotconfusionmatrix.plot_confusion_matrix(conf_matrix_, classes=np.unique(test_y_),
+                          title='Confusion matrix, without normalization')
+
+
 
 if __name__ == "__main__":
 
