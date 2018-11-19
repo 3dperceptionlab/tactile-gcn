@@ -142,7 +142,6 @@ def generated_balanced_k_folds(dataset, indices, folds, randomSeed=32):
 
     np.random.seed(randomSeed)
     np.random.shuffle(indices)
-    log.info(indices)
     num_samples_ = len(indices)
 
     log.info("There are {0} indices to be distributed across the folds...".format(num_samples_))
@@ -249,8 +248,8 @@ def train_traintest(args, dataset, trainIdx, testIdx):
         for batch in train_loader_:
 
             # Batch Visualization
-            #log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
-            #visualize_batch(batch)
+            log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
+            visualize_batch(batch)
 
             batch = batch.to(device_)
             optimizer_.zero_grad()
@@ -363,8 +362,8 @@ def train_kfolds(args, dataset, foldsIdx):
             for batch in train_loader_:
 
                 # Batch Visualization
-                #log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
-                #visualize_batch(batch)
+                log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
+                visualize_batch(batch)
 
                 batch = batch.to(device_)
                 optimizer_.zero_grad()

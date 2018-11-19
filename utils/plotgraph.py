@@ -69,8 +69,8 @@ def plot_contourgraph(sample):
     y_i_ = np.linspace(min(sample['data_index'].pos[1]), max(sample['data_index'].pos[1]))
     x_, y_ = np.meshgrid(x_i_, y_i_)
     levels_ = np.linspace(0, 4096, 64)
-    xtics_ = np.arange(-4.0, 5.0, step=1.0)
-    ytics_ = np.arange(-6.0, 6.0, step=1.0)
+    xtics_ = np.arange(-0.3, 0.4, step=0.1)
+    ytics_ = np.arange(-0.4, 0.5, step=0.1)
 
     figure_, axes_ = plt.subplots(ncols=3, sharex=True, sharey=True)
     (ax0_, ax1_, ax2_) = axes_
@@ -85,8 +85,8 @@ def plot_contourgraph(sample):
     ax0_.set_xticks(xtics_)
     ax0_.set_yticks(ytics_)
     ax0_.set_title('Index Finger')
-    ax0_.set_ylabel('Vertical Position [mm]')
-    ax0_.set_xlabel('Horizontal Position [mm]')
+    ax0_.set_ylabel('Vertical Position [cm]')
+    ax0_.set_xlabel('Horizontal Position [cm]')
 
     z_ = matplotlib.mlab.griddata(sample['data_middle'].pos[0], sample['data_middle'].pos[1], sample['data_middle'].x, x_i_, y_i_, interp='linear')
 
@@ -98,7 +98,7 @@ def plot_contourgraph(sample):
     ax1_.set_xticks(xtics_)
     ax1_.set_yticks(ytics_)
     ax1_.set_title('Middle Finger')
-    ax1_.set_xlabel('Horizontal Position [mm]')
+    ax1_.set_xlabel('Horizontal Position [cm]')
 
     z_ = matplotlib.mlab.griddata(sample['data_thumb'].pos[0], sample['data_thumb'].pos[1], sample['data_thumb'].x, x_i_, y_i_, interp='linear')
 
@@ -110,7 +110,7 @@ def plot_contourgraph(sample):
     ax2_.set_xticks(xtics_)
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger')
-    ax2_.set_xlabel('Horizontal Position [mm]')
+    ax2_.set_xlabel('Horizontal Position [cm]')
 
     figure_.tight_layout()
 
@@ -124,8 +124,8 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     y_i_ = np.linspace(min(pos[:, 1]), max(pos[:, 1]))
     x_, y_ = np.meshgrid(x_i_, y_i_)
     levels_ = np.linspace(0, 4096, 64)
-    xtics_ = np.arange(-4.0, 5.0, step=1.0)
-    ytics_ = np.arange(-6.0, 6.0, step=1.0)
+    xtics_ = np.arange(-0.3, 0.4, step=0.1)
+    ytics_ = np.arange(-0.4, 0.5, step=0.1)
 
     figure_, axes_ = plt.subplots(ncols=3, sharex=True, sharey=True)
     (ax0_, ax1_, ax2_) = axes_
@@ -140,8 +140,8 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax0_.set_xticks(xtics_)
     ax0_.set_yticks(ytics_)
     ax0_.set_title('Index Finger')
-    ax0_.set_ylabel('Vertical Position [mm]')
-    ax0_.set_xlabel('Horizontal Position [mm]')
+    ax0_.set_ylabel('Vertical Position [cm]')
+    ax0_.set_xlabel('Horizontal Position [cm]')
 
     z_ = matplotlib.mlab.griddata(pos[:, 0], pos[:, 1], x[:, 1], x_i_, y_i_, interp='linear')
 
@@ -153,7 +153,7 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax1_.set_xticks(xtics_)
     ax1_.set_yticks(ytics_)
     ax1_.set_title('Middle Finger')
-    ax1_.set_xlabel('Horizontal Position [mm]')
+    ax1_.set_xlabel('Horizontal Position [cm]')
 
     z_ = matplotlib.mlab.griddata(pos[:, 0], pos[:, 1], x[:, 2], x_i_, y_i_, interp='linear')
 
@@ -165,7 +165,7 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax2_.set_xticks(xtics_)
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger')
-    ax2_.set_xlabel('Horizontal Position [mm]')
+    ax2_.set_xlabel('Horizontal Position [cm]')
 
     figure_.tight_layout()
 
