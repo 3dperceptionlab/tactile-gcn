@@ -26,13 +26,10 @@ import torch.utils.data.dataloader
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch_geometric.data import Data
 from torch_geometric.data import DataLoader
-from torch_geometric.nn import GCNConv, ChebConv # noqa
-from torch_geometric.utils import normalized_cut
-from torch_geometric.nn import (SplineConv, graclus, max_pool, max_pool_x,
-global_mean_pool)
 
 import loader.biotacsp_loader
 import dataset.biotacsp
+import network.utils
 import transforms.tograph
 import utils.plotconfusionmatrix
 import utils.plotaccuracies
@@ -41,32 +38,6 @@ import utils.plotgraph
 import utils.plotlosses
 
 log = logging.getLogger(__name__)
-
-def normalized_cut_2d(edge_index, pos):
-    row, col = edge_index
-    edge_attr = torch.norm(pos[row] - pos[col], p=2, dim=1)
-    return normalized_cut(edge_index, edge_attr, num_nodes=pos.size(0))
-
-class Net(torch.nn.Module):
-    def __init__(self, numFeatures, numClasses):
-        super(Net, self).__init__()
-        self.conv1 = GCNConv(numFeatures, 32)
-        self.conv2 = GCNConv(32, 64)
-        self.fc1 = torch.nn.Linear(64, numClasses)
-
-    def forward(self, data):
-        data.x = F.relu(self.conv1(data.x, data.edge_index))
-        data.x = F.dropout(data.x, training=self.training)
-        data.x = self.conv2(data.x, data.edge_index)
-
-        weight = normalized_cut_2d(data.edge_index, data.pos)
-        cluster = graclus(data.edge_index, weight, data.x.size(0))
-        data.x, batch = max_pool_x(cluster, data.x, data.batch)
-        data.x = global_mean_pool(data.x, batch)
-
-        data.x = self.fc1(data.x)
-        data.x = F.log_softmax(data.x, dim=1)
-        return data.x
 
 def visualize_batch(batch):
 
@@ -222,7 +193,8 @@ def train_traintest(args, dataset, trainIdx, testIdx):
     log.info(torch.cuda.get_device_name(0))
 
     ## Build model
-    model_ = Net(dataset.data.num_features, dataset.data.num_classes).to(device_)
+    model_ = network.utils.get_network(args.network, dataset.data.num_features, dataset.data.num_classes).to(device_)
+    #model_ = torch.nn.DataParallel(model_, device_ids=range(torch.cuda.device_count()))
     log.info(model_)
 
     ## Optimizer
@@ -248,8 +220,9 @@ def train_traintest(args, dataset, trainIdx, testIdx):
         for batch in train_loader_:
 
             # Batch Visualization
-            log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
-            visualize_batch(batch)
+            if (args.visualize_batch):
+                log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
+                visualize_batch(batch)
 
             batch = batch.to(device_)
             optimizer_.zero_grad()
@@ -336,7 +309,8 @@ def train_kfolds(args, dataset, foldsIdx):
         log.info(torch.cuda.get_device_name(0))
 
         ## Build model
-        model_ = Net(dataset.data.num_features, dataset.data.num_classes).to(device_)
+        model_ = network.utils.get_network(args.network, dataset.data.num_features, dataset.data.num_classes).to(device_)
+        #model_ = torch.nn.DataParallel(model_, device_ids=range(torch.cuda.device_count()))
         log.info(model_)
 
         ## Optimizer
@@ -362,8 +336,9 @@ def train_kfolds(args, dataset, foldsIdx):
             for batch in train_loader_:
 
                 # Batch Visualization
-                log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
-                visualize_batch(batch)
+                if (args.visualize_batch):
+                    log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
+                    visualize_batch(batch)
 
                 batch = batch.to(device_)
                 optimizer_.zero_grad()
@@ -450,8 +425,10 @@ if __name__ == "__main__":
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
     parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
+    parser_.add_argument("--network", nargs="?", default="GCN_32_64", help="The network model to train")
     parser_.add_argument("--lr", nargs="?", type=float, default=0.0001, help="Learning Rate")
     parser_.add_argument("--epochs", nargs="?", type=int, default=32, help="Training Epochs")
+    parser_.add_argument("--visualize_batch", nargs="?", type=bool, default=False, help="Wether or not to display batch contour plots")
 
     args_ = parser_.parse_args()
 
