@@ -28,7 +28,8 @@ class GCN_test(torch.nn.Module):
         self.conv2 = GCNConv(8, 8)
         self.conv3 = GCNConv(8, 16)
         self.conv4 = GCNConv(16, 16)
-        self.fc1 = torch.nn.Linear(384, 128)
+        self.conv5 = GCNConv(16, 32)
+        self.fc1 = torch.nn.Linear(768, 128)
         self.fc2 = torch.nn.Linear(128, numClasses * 1)
 
     def forward(self, data):
@@ -37,6 +38,7 @@ class GCN_test(torch.nn.Module):
         data.x = F.relu(self.conv2(data.x, data.edge_index))
         data.x = F.relu(self.conv3(data.x, data.edge_index))
         data.x = F.relu(self.conv4(data.x, data.edge_index))
+        data.x = F.relu(self.conv5(data.x, data.edge_index))
         #data.x = F.dropout(data.x, training=self.training)
 
         log.debug(data.x.view(-1).size())

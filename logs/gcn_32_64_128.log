@@ -1,0 +1,162 @@
+INFO:__main__:BioTacSp(2549)
+INFO:__main__:Generating balanced train/test splits...
+INFO:__main__:Seed is 1542885431
+INFO:__main__:Dataset has 2549 elements...
+INFO:__main__:Split is 0.2
+INFO:__main__:Testing split will contain 509 samples
+INFO:__main__:The target distribution for the test set is [253. 255.]
+INFO:__main__:Train split contains 2041 samples and test split contain 508 samples...
+INFO:__main__:Class count on the training split is {0: 1017, 1: 1024}
+INFO:__main__:Class count on the test split is {0: 253, 1: 255}
+INFO:__main__:Trainign with train and test set...
+INFO:__main__:cuda:0
+INFO:__main__:GeForce GTX TITAN X
+INFO:__main__:GCN_32_64_128(
+  (conv1): GCNConv(3, 32)
+  (conv2): GCNConv(32, 64)
+  (conv3): GCNConv(64, 128)
+  (fc1): Linear(in_features=128, out_features=2, bias=True)
+)
+INFO:__main__:Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.0001
+    weight_decay: 0.0005
+)
+INFO:__main__:Training epoch 0 out of 32
+INFO:__main__:Training loss 80388.56298446655
+INFO:__main__:Training accuracy 0.5330720235178834
+INFO:__main__:Test accuracy 0.5334645669291339
+INFO:__main__:Training epoch 1 out of 32
+INFO:__main__:Training loss 45933.31641626358
+INFO:__main__:Training accuracy 0.5066144047035767
+INFO:__main__:Test accuracy 0.5078740157480315
+INFO:__main__:Training epoch 2 out of 32
+INFO:__main__:Training loss 35445.741280436516
+INFO:__main__:Training accuracy 0.49877511024007837
+INFO:__main__:Test accuracy 0.49606299212598426
+INFO:__main__:Training epoch 3 out of 32
+INFO:__main__:Training loss 27494.240264832973
+INFO:__main__:Training accuracy 0.6854483096521313
+INFO:__main__:Test accuracy 0.6988188976377953
+INFO:__main__:Training epoch 4 out of 32
+INFO:__main__:Training loss 22215.911970585585
+INFO:__main__:Training accuracy 0.6839784419402254
+INFO:__main__:Test accuracy 0.6850393700787402
+INFO:__main__:Training epoch 5 out of 32
+INFO:__main__:Training loss 19561.471693329513
+INFO:__main__:Training accuracy 0.49877511024007837
+INFO:__main__:Test accuracy 0.49606299212598426
+INFO:__main__:Training epoch 6 out of 32
+INFO:__main__:Training loss 14795.005694425665
+INFO:__main__:Training accuracy 0.7089661930426262
+INFO:__main__:Test accuracy 0.7303149606299213
+INFO:__main__:Training epoch 7 out of 32
+INFO:__main__:Training loss 13095.376269638538
+INFO:__main__:Training accuracy 0.7133757961783439
+INFO:__main__:Test accuracy 0.75
+INFO:__main__:Training epoch 8 out of 32
+INFO:__main__:Training loss 10423.41447504796
+INFO:__main__:Training accuracy 0.7334639882410583
+INFO:__main__:Test accuracy 0.7519685039370079
+INFO:__main__:Training epoch 9 out of 32
+INFO:__main__:Training loss 8101.26263602078
+INFO:__main__:Training accuracy 0.5918667319941205
+INFO:__main__:Test accuracy 0.5826771653543307
+INFO:__main__:Training epoch 10 out of 32
+INFO:__main__:Training loss 6985.113256663084
+INFO:__main__:Training accuracy 0.5286624203821656
+INFO:__main__:Test accuracy 0.5374015748031497
+INFO:__main__:Training epoch 11 out of 32
+INFO:__main__:Training loss 5698.317327909172
+INFO:__main__:Training accuracy 0.65703086722195
+INFO:__main__:Test accuracy 0.6417322834645669
+INFO:__main__:Training epoch 12 out of 32
+INFO:__main__:Training loss 4323.674573691562
+INFO:__main__:Training accuracy 0.7226849583537481
+INFO:__main__:Test accuracy 0.7224409448818898
+INFO:__main__:Training epoch 13 out of 32
+INFO:__main__:Training loss 3847.9670435748994
+INFO:__main__:Training accuracy 0.7099461048505634
+INFO:__main__:Test accuracy 0.702755905511811
+INFO:__main__:Training epoch 14 out of 32
+INFO:__main__:Training loss 3144.246141396463
+INFO:__main__:Training accuracy 0.6976972072513474
+INFO:__main__:Test accuracy 0.6653543307086615
+INFO:__main__:Training epoch 15 out of 32
+INFO:__main__:Training loss 2545.1062238719314
+INFO:__main__:Training accuracy 0.7319941205291524
+INFO:__main__:Test accuracy 0.718503937007874
+INFO:__main__:Training epoch 16 out of 32
+INFO:__main__:Training loss 2220.334746260196
+INFO:__main__:Training accuracy 0.7089661930426262
+INFO:__main__:Test accuracy 0.6732283464566929
+INFO:__main__:Training epoch 17 out of 32
+INFO:__main__:Training loss 2079.2567047635093
+INFO:__main__:Training accuracy 0.7496325330720235
+INFO:__main__:Test accuracy 0.7559055118110236
+INFO:__main__:Training epoch 18 out of 32
+INFO:__main__:Training loss 1774.9735000384971
+INFO:__main__:Training accuracy 0.7231749142577168
+INFO:__main__:Test accuracy 0.7007874015748031
+INFO:__main__:Training epoch 19 out of 32
+INFO:__main__:Training loss 1675.1334659857675
+INFO:__main__:Training accuracy 0.7207251347378736
+INFO:__main__:Test accuracy 0.7066929133858267
+INFO:__main__:Training epoch 20 out of 32
+INFO:__main__:Training loss 1642.167658623308
+INFO:__main__:Training accuracy 0.6952474277315042
+INFO:__main__:Test accuracy 0.6948818897637795
+INFO:__main__:Training epoch 21 out of 32
+INFO:__main__:Training loss 1424.791427835822
+INFO:__main__:Training accuracy 0.6937775600195982
+INFO:__main__:Test accuracy 0.6811023622047244
+INFO:__main__:Training epoch 22 out of 32
+INFO:__main__:Training loss 1359.508476741612
+INFO:__main__:Training accuracy 0.6947574718275356
+INFO:__main__:Test accuracy 0.6811023622047244
+INFO:__main__:Training epoch 23 out of 32
+INFO:__main__:Training loss 1309.9951207712293
+INFO:__main__:Training accuracy 0.6712395884370407
+INFO:__main__:Test accuracy 0.65748031496063
+INFO:__main__:Training epoch 24 out of 32
+INFO:__main__:Training loss 1280.3959496356547
+INFO:__main__:Training accuracy 0.7604115629593337
+INFO:__main__:Test accuracy 0.7460629921259843
+INFO:__main__:Training epoch 25 out of 32
+INFO:__main__:Training loss 1196.4174863863736
+INFO:__main__:Training accuracy 0.7011268985791279
+INFO:__main__:Test accuracy 0.6968503937007874
+INFO:__main__:Training epoch 26 out of 32
+INFO:__main__:Training loss 1194.77248581592
+INFO:__main__:Training accuracy 0.7070063694267515
+INFO:__main__:Test accuracy 0.6830708661417323
+INFO:__main__:Training epoch 27 out of 32
+INFO:__main__:Training loss 1203.163148155436
+INFO:__main__:Training accuracy 0.6374326310632044
+INFO:__main__:Test accuracy 0.6181102362204725
+INFO:__main__:Training epoch 28 out of 32
+INFO:__main__:Training loss 1182.8211174607277
+INFO:__main__:Training accuracy 0.7466927976482116
+INFO:__main__:Test accuracy 0.7224409448818898
+INFO:__main__:Training epoch 29 out of 32
+INFO:__main__:Training loss 1160.8864333610982
+INFO:__main__:Training accuracy 0.7422831945124939
+INFO:__main__:Test accuracy 0.7106299212598425
+INFO:__main__:Training epoch 30 out of 32
+INFO:__main__:Training loss 1185.0760897807777
+INFO:__main__:Training accuracy 0.6893679568838804
+INFO:__main__:Test accuracy 0.6496062992125984
+INFO:__main__:Training epoch 31 out of 32
+INFO:__main__:Training loss 1163.0630543194711
+INFO:__main__:Training accuracy 0.7609015188633023
+INFO:__main__:Test accuracy 0.75
+INFO:__main__:Training took 1657.829597031001 seconds
+INFO:__main__:CHECK CHECK CHECK: 508
+INFO:__main__:Metrics
+INFO:__main__:Accuracy: 0.7460629921259843
+INFO:__main__:Precision: 0.7138047138047138
+INFO:__main__:Recall: 0.828125
+INFO:__main__:F-score: 0.7667269439421338
