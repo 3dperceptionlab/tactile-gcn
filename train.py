@@ -56,6 +56,7 @@ def visualize_batch(batch):
         y_ = batch['y'][i:i]
         edge_index_ = batch['edge_index'][:, epg_*i:epg_*i + epg_] - i*npg_
 
+        utils.plotgraph.plot_graph_3d(pos_, x_, y_, edge_index_)
         utils.plotgraph.plot_contourgraph_batch(pos_, x_, y_, edge_index_)
 
 def generate_balanced_train_test_splits(dataset, randomSeed=32, split=0.2):
