@@ -12,8 +12,11 @@ log = logging.getLogger(__name__)
 
 class BioTacSp(InMemoryDataset):
 
-  def __init__(self, root, k, transform=None, pre_transform=None):
+  def __init__(self, root, k, normalize=True, transform=None, pre_transform=None):
     self.k = k
+    self.normalize = normalize
+    self.mins = []
+    self.maxs = []
 
     super(BioTacSp, self).__init__(root, transform, pre_transform)
 
@@ -64,6 +67,15 @@ class BioTacSp(InMemoryDataset):
           sample_ = self.pre_transform(sample_)
 
         data_list_.append(sample_)
+
+    if self.normalize: # Feature scaling
+      raw_dataset_np_ = np.array([sample.x.numpy() for sample in data_list_])
+
+      self.mins = np.min(raw_dataset_np_, axis=(0, 1))
+      self.maxs = np.max(raw_dataset_np_, axis=(0, 1))
+
+      for i in range(len(data_list_)):
+        data_list_[i].x = torch.from_numpy((data_list_[i].x.numpy() - self.mins) / (self.maxs - self.mins))
 
     data_ = self.collate(data_list_)
 

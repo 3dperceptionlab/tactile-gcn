@@ -404,7 +404,7 @@ def train_kfolds(args, dataset, foldsIdx):
 
 def train(args):
 
-    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k)
+    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, normalize=args.normalize)
     log.info(biotacsp_dataset_)
 
     # REMEMBER: Pass a random seed to generators when no need to replicate experiments
@@ -423,6 +423,7 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     parser_ = argparse.ArgumentParser(description="Parameters")
+    parser_.add_argument("--normalize", nargs="?", type=bool, default=True, help="Normalize dataset using feature scaling")
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
     parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
