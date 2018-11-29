@@ -393,6 +393,10 @@ def train_kfolds(args, dataset, foldsIdx):
         #utils.plotlosses.plot_losses(epochs_, [train_losses_], ["Train Loss"])
 
         max_accuracy_index_ = validation_accuracies_.index(max(validation_accuracies_))
+
+        log.info("Maximum validation accuracy {0}".format(validation_accuracies_[max_accuracy_index_]))
+        log.info("Training accuracy {0}".format(train_accuracies_[max_accuracy_index_]))
+        
         avg_train_accuracy_ += train_accuracies_[max_accuracy_index_]
         avg_validation_accuracy_ += validation_accuracies_[max_accuracy_index_]
 
