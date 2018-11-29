@@ -34,11 +34,11 @@ class GCN_test(torch.nn.Module):
 
     def forward(self, data):
         #log.info("NETWOROOOOOORK")
-        data.x = F.relu(self.conv1(data.x, data.edge_index))
-        data.x = F.relu(self.conv2(data.x, data.edge_index))
-        data.x = F.relu(self.conv3(data.x, data.edge_index))
-        data.x = F.relu(self.conv4(data.x, data.edge_index))
-        data.x = F.relu(self.conv5(data.x, data.edge_index))
+        data.x = F.elu(self.conv1(data.x, data.edge_index))
+        data.x = F.elu(self.conv2(data.x, data.edge_index))
+        data.x = F.elu(self.conv3(data.x, data.edge_index))
+        data.x = F.elu(self.conv4(data.x, data.edge_index))
+        data.x = F.elu(self.conv5(data.x, data.edge_index))
         #data.x = F.dropout(data.x, training=self.training)
 
         log.debug(data.x.view(-1).size())
@@ -119,4 +119,67 @@ class GCN_32_64_128(torch.nn.Module):
 
         data.x = self.fc1(data.x)
         data.x = F.log_softmax(data.x, dim=1)
+        return data.x
+
+class GCN_8_8_16_16_32(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        self.conv2 = GCNConv(8, 8)
+        self.conv3 = GCNConv(8, 16)
+        self.conv4 = GCNConv(16, 16)
+        self.conv5 = GCNConv(16, 32)
+        self.fc1 = torch.nn.Linear(768, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+        data.x = F.relu(self.conv4(data.x, data.edge_index))
+        data.x = F.relu(self.conv5(data.x, data.edge_index))
+
+        log.debug(data.x.view(-1).size())
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        log.debug(data.x.size())
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+        log.debug(data.x.size())
+        return data.x
+
+class GCN_8bn_8bn_16bn_16bn_32bn(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        self.conv1_bn = nn.BatchNorm1d(8)
+        self.conv2 = GCNConv(8, 8)
+        self.conv2_bn = nn.BatchNorm1d(8)
+        self.conv3 = GCNConv(8, 16)
+        self.conv3_bn = nn.BatchNorm1d(16)
+        self.conv4 = GCNConv(16, 16)
+        self.conv4_bn = nn.BatchNorm1d(16)
+        self.conv5 = GCNConv(16, 32)
+        self.conv5_bn = nn.BatchNorm1d(32)
+        self.fc1 = torch.nn.Linear(768, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+        data.x = F.relu(self.conv1_bn(self.conv1(data.x, data.edge_index)))
+        data.x = F.relu(self.conv2_bn(self.conv2(data.x, data.edge_index)))
+        data.x = F.relu(self.conv3_bn(self.conv3(data.x, data.edge_index)))
+        data.x = F.relu(self.conv4_bn(self.conv4(data.x, data.edge_index)))
+        data.x = F.relu(self.conv5_bn(self.conv5(data.x, data.edge_index)))
+
+        log.debug(data.x.view(-1).size())
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        log.debug(data.x.size())
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+        log.debug(data.x.size())
         return data.x
