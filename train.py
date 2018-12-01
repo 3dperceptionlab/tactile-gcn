@@ -10,6 +10,7 @@ __email__       = "agarcia@dtic.ua.es"
 __status__ = "Development"
 
 import argparse
+import datetime
 import logging
 import sys
 import time
@@ -424,9 +425,8 @@ def train(args):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
     parser_ = argparse.ArgumentParser(description="Parameters")
+    parser_.add_argument("--log_path", nargs="?", default="logs", help="Logging path")
     parser_.add_argument("--normalize", nargs="?", type=bool, default=True, help="Normalize dataset using feature scaling")
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
@@ -437,5 +437,20 @@ if __name__ == "__main__":
     parser_.add_argument("--visualize_batch", nargs="?", type=bool, default=False, help="Wether or not to display batch contour plots")
 
     args_ = parser_.parse_args()
+
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    # Experiment name (and log filename) follows the format network-normalization-graph_k-datetime
+    experiment_str_ = '{0}-{1}-{2}-{3}'.format(
+                        args_.network,
+                        args_.normalize,
+                        args_.graph_k,
+                        datetime.datetime.now().strftime('%b%d_%H-%M-%S'))
+
+    # Add file handler to logging system to simultaneously log information to console and file
+    log_formatter_ = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    file_handler_ = logging.FileHandler("{0}/{1}.log".format(args_.log_path, experiment_str_))
+    file_handler_.setFormatter(log_formatter_)
+    log.addHandler(file_handler_)
 
     train(args_)
