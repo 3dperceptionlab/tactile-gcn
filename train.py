@@ -179,9 +179,9 @@ def evaluate(model, device, loader):
     utils.plotconfusionmatrix.plot_confusion_matrix(conf_matrix_, classes=np.unique(test_y_),
                         title='Confusion matrix, without normalization')
 
-def train_traintest(args, dataset, trainIdx, testIdx):
+def train_traintest(args, experimentStr, dataset, trainIdx, testIdx):
 
-    log.info("Trainign with train and test set...")
+    log.info("Training with train and test set...")
 
     train_sampler_ = SubsetRandomSampler(trainIdx)
     train_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=train_sampler_, num_workers=1)
@@ -205,6 +205,7 @@ def train_traintest(args, dataset, trainIdx, testIdx):
 
     ## Log accuracies, learning rate, and loss
     epochs_ = []
+    best_test_acc_ = 0.0
     train_accuracies_ = []
     test_accuracies_ = []
     train_losses_ = []
@@ -267,9 +268,22 @@ def train_traintest(args, dataset, trainIdx, testIdx):
             correct_ += pred_.eq(batch.y).sum().item()
 
         correct_ /= len(testIdx)
-        test_accuracies_.append(correct_)
 
+        # Log test accuracy
+        test_accuracies_.append(correct_)
         log.info("Test accuracy {0}".format(correct_))
+
+        # Checkpoint model
+        if correct_ > best_test_acc_ and args.save_ckpt:
+
+            log.info("BEST ACCURACY SO FAR, checkpoint model...")
+
+            best_test_acc_ = correct_
+
+            state_ = {'epoch': epoch+1,
+                      'model_state': model_.state_dict(),
+                      'optimizer_state': optimizer_.state_dict(),}
+            torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_{0}.pkl").format(epoch))
 
         epochs_.append(epoch)
 
@@ -407,7 +421,7 @@ def train_kfolds(args, dataset, foldsIdx):
     log.info("Average training accuracy {0}".format(avg_train_accuracy_))
     log.info("Averate validation accuracy {0}".format(avg_validation_accuracy_))
 
-def train(args):
+def train(args, experimentStr):
 
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, normalize=args.normalize)
     log.info(biotacsp_dataset_)
@@ -421,12 +435,14 @@ def train(args):
         train_kfolds(args, biotacsp_dataset_, folds_idx_)
     else:
         train_idx_, test_idx_ = generate_balanced_train_test_splits(biotacsp_dataset_, random_seed_)
-        train_traintest(args, biotacsp_dataset_, train_idx_, test_idx_)
+        train_traintest(args, experimentStr, biotacsp_dataset_, train_idx_, test_idx_)
 
 if __name__ == "__main__":
 
     parser_ = argparse.ArgumentParser(description="Parameters")
     parser_.add_argument("--log_path", nargs="?", default="logs", help="Logging path")
+    parser_.add_argument("--ckpt_path", nargs="?", default="ckpts", help="Path to save checkpoints")
+    parser_.add_argument("--save_ckpt", nargs="?", type=bool, default=True, help="Wether or not to store the best weights")
     parser_.add_argument("--normalize", nargs="?", type=bool, default=True, help="Normalize dataset using feature scaling")
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
@@ -453,4 +469,4 @@ if __name__ == "__main__":
     file_handler_.setFormatter(log_formatter_)
     log.addHandler(file_handler_)
 
-    train(args_)
+    train(args_, experiment_str_)

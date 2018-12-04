@@ -33,17 +33,17 @@ class GCN_test(torch.nn.Module):
         self.fc2 = torch.nn.Linear(128, numClasses * 1)
 
     def forward(self, data):
-        #log.info("NETWOROOOOOORK")
-        data.x = F.elu(self.conv1(data.x, data.edge_index))
-        data.x = F.elu(self.conv2(data.x, data.edge_index))
-        data.x = F.elu(self.conv3(data.x, data.edge_index))
-        data.x = F.elu(self.conv4(data.x, data.edge_index))
-        data.x = F.elu(self.conv5(data.x, data.edge_index))
-        #data.x = F.dropout(data.x, training=self.training)
+        data.x = F.tanh(self.conv1(data.x, data.edge_index))
+        data.x = F.tanh(self.conv2(data.x, data.edge_index))
+        data.x = F.tanh(self.conv3(data.x, data.edge_index))
+        data.x = F.tanh(self.conv4(data.x, data.edge_index))
+        data.x = F.tanh(self.conv5(data.x, data.edge_index))
 
         log.debug(data.x.view(-1).size())
         data.x = self.fc1(data.x.view(-1))
+        #data.x = F.dropout(data.x, training=self.training)
         data.x = self.fc2(data.x)
+        #data.x = F.dropout(data.x, training=self.training)
         log.debug(data.x.size())
         data.x = F.log_softmax(data.x.view(1, 2), dim=1)
         log.debug(data.x.size())
@@ -225,6 +225,40 @@ class GCN_8_8_16_16_32(torch.nn.Module):
         self.conv3 = GCNConv(8, 16)
         self.conv4 = GCNConv(16, 16)
         self.conv5 = GCNConv(16, 32)
+        self.fc1 = torch.nn.Linear(768, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+        data.x = F.relu(self.conv4(data.x, data.edge_index))
+        data.x = F.relu(self.conv5(data.x, data.edge_index))
+
+        log.debug(data.x.view(-1).size())
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        log.debug(data.x.size())
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+        log.debug(data.x.size())
+        return data.x
+
+class GCN_8d_8d_16d_16d_32d(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        data.x = F.dropout(data.x, training=self.training)
+        self.conv2 = GCNConv(8, 8)
+        data.x = F.dropout(data.x, training=self.training)
+        self.conv3 = GCNConv(8, 16)
+        data.x = F.dropout(data.x, training=self.training)
+        self.conv4 = GCNConv(16, 16)
+        data.x = F.dropout(data.x, training=self.training)
+        self.conv5 = GCNConv(16, 32)
+        data.x = F.dropout(data.x, training=self.training)
         self.fc1 = torch.nn.Linear(768, 128)
         self.fc2 = torch.nn.Linear(128, numClasses * 1)
 
