@@ -18,9 +18,6 @@ from timeit import default_timer as timer
 
 import numpy as np
 
-from sklearn.metrics import precision_recall_fscore_support
-from sklearn.metrics import confusion_matrix
-
 import torch
 import torch.nn.functional as F
 import torch.utils.data.dataloader
@@ -32,7 +29,6 @@ import loader.biotacsp_loader
 import dataset.biotacsp
 import network.utils
 import transforms.tograph
-import utils.plotconfusionmatrix
 import utils.plotaccuracies
 import utils.plotcontour
 import utils.plotgraph
@@ -142,42 +138,6 @@ def generated_balanced_k_folds(dataset, indices, folds, randomSeed=32):
         
 
     return fold_indices_
-
-def evaluate(model, device, loader):
-
-    ## Launch predictions on test and calculate metrics
-    test_acc_ = 0.0
-    test_y_ = []
-    test_pred_ = []
-
-    model.eval()
-
-    for batch in loader:
-
-        batch = batch.to(device)
-        pred_ = model(batch).max(1)[1]
-        test_acc_ += pred_.eq(batch.y).sum().item()
-
-        test_y_.append(batch.y)
-        test_pred_.append(pred_)
-
-    # TODO: OJO A QUE ESTO NO COJA LA LONGITUD EN BATCHES
-    log.info("CHECK CHECK CHECK: {0}".format(len(loader)))
-    test_acc_ /= len(loader)
-
-    test_prec_, test_rec_, test_fscore_, _ = precision_recall_fscore_support(test_y_, test_pred_, average='binary')
-
-    log.info("Metrics")
-    log.info("Accuracy: {0}".format(test_acc_))
-    log.info("Precision: {0}".format(test_prec_))
-    log.info("Recall: {0}".format(test_rec_))
-    log.info("F-score: {0}".format(test_fscore_))
-
-    conf_matrix_ = confusion_matrix(test_y_, test_pred_)
-
-    ## Plot non-normalized confusion matrix
-    utils.plotconfusionmatrix.plot_confusion_matrix(conf_matrix_, classes=np.unique(test_y_),
-                        title='Confusion matrix, without normalization')
 
 def train_traintest(args, experimentStr, dataset, trainIdx, testIdx):
 
@@ -293,9 +253,7 @@ def train_traintest(args, experimentStr, dataset, trainIdx, testIdx):
     utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, test_accuracies_], ["Train Accuracy", "Test Accuracy"])
     utils.plotlosses.plot_losses(epochs_, [train_losses_], ["Train Loss"])
 
-    evaluate(model_, device_, test_loader_)
-
-def train_kfolds(args, dataset, foldsIdx):
+def train_kfolds(args, experimentStr, dataset, foldsIdx):
 
     log.info("Training with k={0} folds...".format(len(foldsIdx)))
 
@@ -337,6 +295,7 @@ def train_kfolds(args, dataset, foldsIdx):
         epochs_ = []
         train_accuracies_ = []
         validation_accuracies_ = []
+        best_val_acc_ = 0.0
         train_losses_ = []
 
         time_start_ = timer()
@@ -397,6 +356,18 @@ def train_kfolds(args, dataset, foldsIdx):
             correct_ /= len(validation_fold_idx_)
             validation_accuracies_.append(correct_)
 
+            # Checkpoint model
+            if correct_ > best_val_acc_ and args.save_ckpt:
+
+                log.info("BEST VALIDATION ACCURACY SO FAR, checkpoint model...")
+
+                best_val_acc_ = correct_
+
+                state_ = {'epoch': epoch+1,
+                      'model_state': model_.state_dict(),
+                      'optimizer_state': optimizer_.state_dict(),}
+                torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_fold{0}.pkl").format(epoch))
+
             log.info("Validation accuracy {0}".format(correct_))
 
             epochs_.append(epoch)
@@ -404,13 +375,11 @@ def train_kfolds(args, dataset, foldsIdx):
         time_end_ = timer()
         log.info("Training took {0} seconds".format(time_end_ - time_start_))
 
-        #utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, validation_accuracies_], ["Train Accuracy", "Test Accuracy"])
-        #utils.plotlosses.plot_losses(epochs_, [train_losses_], ["Train Loss"])
-
         max_accuracy_index_ = validation_accuracies_.index(max(validation_accuracies_))
 
         log.info("Maximum validation accuracy {0}".format(validation_accuracies_[max_accuracy_index_]))
         log.info("Training accuracy {0}".format(train_accuracies_[max_accuracy_index_]))
+        log.info("At epoch {0}".format(max_accuracy_index_))
         
         avg_train_accuracy_ += train_accuracies_[max_accuracy_index_]
         avg_validation_accuracy_ += validation_accuracies_[max_accuracy_index_]
@@ -423,7 +392,7 @@ def train_kfolds(args, dataset, foldsIdx):
 
 def train(args, experimentStr):
 
-    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, normalize=args.normalize)
+    biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, split="train", normalize=args.normalize)
     log.info(biotacsp_dataset_)
 
     # REMEMBER: Pass a random seed to generators when no need to replicate experiments
@@ -432,7 +401,7 @@ def train(args, experimentStr):
 
     if (args.folds > 1):
         folds_idx_ = generated_balanced_k_folds(biotacsp_dataset_, list(range(len(biotacsp_dataset_))), args.folds, random_seed_)
-        train_kfolds(args, biotacsp_dataset_, folds_idx_)
+        train_kfolds(args, experimentStr, biotacsp_dataset_, folds_idx_)
     else:
         train_idx_, test_idx_ = generate_balanced_train_test_splits(biotacsp_dataset_, random_seed_)
         train_traintest(args, experimentStr, biotacsp_dataset_, train_idx_, test_idx_)
@@ -447,7 +416,7 @@ if __name__ == "__main__":
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
     parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
-    parser_.add_argument("--network", nargs="?", default="GCN_32_64", help="The network model to train")
+    parser_.add_argument("--network", nargs="?", default="GCN_test", help="The network model to train")
     parser_.add_argument("--lr", nargs="?", type=float, default=0.0001, help="Learning Rate")
     parser_.add_argument("--epochs", nargs="?", type=int, default=32, help="Training Epochs")
     parser_.add_argument("--visualize_batch", nargs="?", type=bool, default=False, help="Wether or not to display batch contour plots")
@@ -457,7 +426,7 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     # Experiment name (and log filename) follows the format network-normalization-graph_k-datetime
-    experiment_str_ = '{0}-{1}-{2}-{3}'.format(
+    experiment_str_ = "train-{0}-{1}-{2}-{3}".format(
                         args_.network,
                         args_.normalize,
                         args_.graph_k,

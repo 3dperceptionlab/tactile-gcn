@@ -12,7 +12,9 @@ log = logging.getLogger(__name__)
 
 class BioTacSp(InMemoryDataset):
 
-  def __init__(self, root, k, normalize=True, transform=None, pre_transform=None):
+  def __init__(self, root, k, split="train", normalize=True, transform=None, pre_transform=None):
+
+    self.split = split
     self.k = k
     self.normalize = normalize
     self.mins = []
@@ -30,11 +32,17 @@ class BioTacSp(InMemoryDataset):
 
   @property
   def raw_file_names(self):
-    return ['biotac-palmdown-grasps.csv', 'biotac-palmside-grasps.csv']
+    if (self.split == "train"):
+      return ['biotac-palmdown-grasps.csv', 'biotac-palmside-grasps.csv', 'palm_45.csv']
+    elif (self.split == "test"):
+      return ['palm_45_test.csv', 'palm_down_test.csv', 'palm_side_test.csv']
 
   @property
   def processed_file_names(self):
-    return ['biotacsp.pt']
+    if (self.split == "train"):
+      return ['biotacsp.pt']
+    elif (self.split == "test"):
+      return ['biotacsp_test.pt']
 
   def download(self):
 

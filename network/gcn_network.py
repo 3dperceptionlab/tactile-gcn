@@ -33,11 +33,11 @@ class GCN_test(torch.nn.Module):
         self.fc2 = torch.nn.Linear(128, numClasses * 1)
 
     def forward(self, data):
-        data.x = F.tanh(self.conv1(data.x, data.edge_index))
-        data.x = F.tanh(self.conv2(data.x, data.edge_index))
-        data.x = F.tanh(self.conv3(data.x, data.edge_index))
-        data.x = F.tanh(self.conv4(data.x, data.edge_index))
-        data.x = F.tanh(self.conv5(data.x, data.edge_index))
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+        data.x = F.relu(self.conv4(data.x, data.edge_index))
+        data.x = F.relu(self.conv5(data.x, data.edge_index))
 
         log.debug(data.x.view(-1).size())
         data.x = self.fc1(data.x.view(-1))
