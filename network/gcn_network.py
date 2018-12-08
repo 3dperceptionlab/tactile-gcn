@@ -164,6 +164,84 @@ class GCN_8_8(torch.nn.Module):
 
         return data.x
 
+class GCN_8_8_8(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        self.conv2 = GCNConv(8, 8)
+        self.conv3 = GCNConv(8, 8)
+        self.fc1 = torch.nn.Linear(192, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+
+        return data.x
+
+class GCN_8_8_8_8(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        self.conv2 = GCNConv(8, 8)
+        self.conv3 = GCNConv(8, 8)
+        self.conv4 = GCNConv(8, 8)
+        self.fc1 = torch.nn.Linear(192, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+        data.x = F.relu(self.conv4(data.x, data.edge_index))
+
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+
+        return data.x
+
+class GCN_8_8_8_8_8(torch.nn.Module):
+
+    def __init__(self, numFeatures, numClasses):
+
+        super().__init__()
+
+        self.conv1 = GCNConv(numFeatures, 8)
+        self.conv2 = GCNConv(8, 8)
+        self.conv3 = GCNConv(8, 8)
+        self.conv4 = GCNConv(8, 8)
+        self.conv5 = GCNConv(8, 8)
+        self.fc1 = torch.nn.Linear(192, 128)
+        self.fc2 = torch.nn.Linear(128, numClasses * 1)
+
+    def forward(self, data):
+
+        data.x = F.relu(self.conv1(data.x, data.edge_index))
+        data.x = F.relu(self.conv2(data.x, data.edge_index))
+        data.x = F.relu(self.conv3(data.x, data.edge_index))
+        data.x = F.relu(self.conv4(data.x, data.edge_index))
+        data.x = F.relu(self.conv5(data.x, data.edge_index))
+
+        data.x = self.fc1(data.x.view(-1))
+        data.x = self.fc2(data.x)
+        data.x = F.log_softmax(data.x.view(1, 2), dim=1)
+
+        return data.x
+
 class GCN_8_8_16(torch.nn.Module):
 
     def __init__(self, numFeatures, numClasses):
