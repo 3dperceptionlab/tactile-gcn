@@ -6,7 +6,7 @@ import matplotlib.mlab
 
 log = logging.getLogger(__name__)
 
-def plot_losses(epochs, losses, labels):
+def plot_losses(epochs, losses, labels, title):
 
   fig_ = plt.figure(figsize=(32, 16))
 
@@ -17,6 +17,7 @@ def plot_losses(epochs, losses, labels):
   plt.grid()
 
   plt.legend(loc=2, ncol=1)
+  plt.title(title)
   plt.xlabel("Epoch")
   plt.ylabel("Loss")
   plt.show()

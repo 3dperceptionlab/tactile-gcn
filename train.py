@@ -29,12 +29,15 @@ import loader.biotacsp_loader
 import dataset.biotacsp
 import network.utils
 import transforms.tograph
+import utils.evaluation
 import utils.plotaccuracies
 import utils.plotcontour
 import utils.plotgraph
 import utils.plotlosses
 
 log = logging.getLogger(__name__)
+
+NUM_WORKERS = 4
 
 def visualize_batch(batch):
 
@@ -55,49 +58,6 @@ def visualize_batch(batch):
 
         utils.plotgraph.plot_graph_3d(pos_, x_, y_, edge_index_)
         utils.plotgraph.plot_contourgraph_batch(pos_, x_, y_, edge_index_)
-
-def generate_balanced_train_test_splits(dataset, randomSeed=32, split=0.2):
-
-    log.info("Generating balanced train/test splits...")
-
-    log.info("Seed is {0}".format(randomSeed))
-
-    train_indices_ = []
-    test_indices_ = []
-    train_class_count_ = {}
-    test_class_count_ = {}
-
-    num_samples_ = len(dataset)
-    indices_ = list(range(num_samples_))
-    num_samples_test_ = int(np.floor(split * num_samples_))
-
-    log.info("Dataset has {0} elements...".format(num_samples_))
-    log.info("Split is {0}".format(split))
-    log.info("Testing split will contain {0} samples".format(num_samples_test_))
-
-    test_class_count_target_ = np.floor(dataset.class_weights * num_samples_test_)
-
-    log.info("The target distribution for the test set is {0}".format(test_class_count_target_))
-
-    np.random.seed(randomSeed)
-    np.random.shuffle(indices_)
-
-    for i in range(len(indices_)):
-        
-        label_ = dataset[i].y.item()
-
-        if test_class_count_target_[label_] > test_class_count_.get(label_, 0):
-            test_indices_.append(indices_[i])
-            test_class_count_[label_] = test_class_count_.get(label_, 0) + 1
-        else:
-            train_indices_.append(indices_[i])
-            train_class_count_[label_] = train_class_count_.get(label_, 0) + 1
-
-    log.info("Train split contains {0} samples and test split contain {1} samples...".format(len(train_indices_), len(test_indices_)))
-    log.info("Class count on the training split is {0}".format(train_class_count_))
-    log.info("Class count on the test split is {0}".format(test_class_count_))
-
-    return train_indices_, test_indices_
 
 def generated_balanced_k_folds(dataset, indices, folds, randomSeed=32):
 
@@ -139,126 +99,18 @@ def generated_balanced_k_folds(dataset, indices, folds, randomSeed=32):
 
     return fold_indices_
 
-def train_traintest(args, experimentStr, dataset, trainIdx, testIdx):
-
-    log.info("Training with train and test set...")
-
-    train_sampler_ = SubsetRandomSampler(trainIdx)
-    train_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=train_sampler_, num_workers=1)
-
-    test_sampler_ = SubsetRandomSampler(testIdx)
-    test_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=test_sampler_, num_workers=1)
-
-    ## Select CUDA device
-    device_ = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    log.info(device_)
-    log.info(torch.cuda.get_device_name(0))
-
-    ## Build model
-    model_ = network.utils.get_network(args.network, dataset.data.num_features, dataset.data.num_classes).to(device_)
-    #model_ = torch.nn.DataParallel(model_, device_ids=range(torch.cuda.device_count()))
-    log.info(model_)
-
-    ## Optimizer
-    optimizer_ = torch.optim.Adam(model_.parameters(), lr=args.lr, weight_decay=5e-4)
-    log.info(optimizer_)
-
-    ## Log accuracies, learning rate, and loss
-    epochs_ = []
-    best_test_acc_ = 0.0
-    train_accuracies_ = []
-    test_accuracies_ = []
-    train_losses_ = []
-
-    time_start_ = timer()
-    
-    for epoch in range(args.epochs):
-
-        log.info("Training epoch {0} out of {1}".format(epoch, args.epochs))
-
-        model_.train()
-        loss_all = 0
-
-        i = 1
-        for batch in train_loader_:
-
-            # Batch Visualization
-            if (args.visualize_batch):
-                log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
-                visualize_batch(batch)
-
-            batch = batch.to(device_)
-            optimizer_.zero_grad()
-            output_ = model_(batch)
-            loss_ = F.nll_loss(output_, batch.y)
-            loss_.backward()
-            loss_all += batch.y.size(0) * loss_.item()
-            optimizer_.step()
-
-            i+=1
-
-        # Log train loss
-        train_losses_.append(loss_all)
-        log.info("Training loss {0}".format(loss_all))
-
-        # Get train accuracy
-        model_.eval()
-        correct_ = 0
-
-        for batch in train_loader_:
-
-            batch = batch.to(device_)
-            pred_ = model_(batch).max(1)[1]
-            correct_ += pred_.eq(batch.y).sum().item()
-
-        correct_ /= len(trainIdx)
-
-        # Log train accuracy
-        train_accuracies_.append(correct_)
-        log.info("Training accuracy {0}".format(correct_))
-
-        # Get test accuracy
-        model_.eval()
-        correct_ = 0
-
-        for batch in test_loader_:
-
-            batch = batch.to(device_)
-            pred_ = model_(batch).max(1)[1]
-            correct_ += pred_.eq(batch.y).sum().item()
-
-        correct_ /= len(testIdx)
-
-        # Log test accuracy
-        test_accuracies_.append(correct_)
-        log.info("Test accuracy {0}".format(correct_))
-
-        # Checkpoint model
-        if correct_ > best_test_acc_ and args.save_ckpt:
-
-            log.info("BEST ACCURACY SO FAR, checkpoint model...")
-
-            best_test_acc_ = correct_
-
-            state_ = {'epoch': epoch+1,
-                      'model_state': model_.state_dict(),
-                      'optimizer_state': optimizer_.state_dict(),}
-            torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_{0}.pkl").format(epoch))
-
-        epochs_.append(epoch)
-
-    time_end_ = timer()
-    log.info("Training took {0} seconds".format(time_end_ - time_start_))
-
-    utils.plotaccuracies.plot_accuracies(epochs_, [train_accuracies_, test_accuracies_], ["Train Accuracy", "Test Accuracy"])
-    utils.plotlosses.plot_losses(epochs_, [train_losses_], ["Train Loss"])
-
-def train_kfolds(args, experimentStr, dataset, foldsIdx):
+def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
 
     log.info("Training with k={0} folds...".format(len(foldsIdx)))
 
     avg_train_accuracy_ = 0.0
     avg_validation_accuracy_ = 0.0
+    avg_test_accuracy_ = 0.0
+
+    per_fold_train_accuracies_ = []
+    per_fold_losses_ = []
+    per_fold_validation_accuracies_ = []
+    per_fold_test_accuracies_ = []
 
     for fold in range(args.folds):
 
@@ -272,8 +124,12 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
         train_sampler_ = SubsetRandomSampler(train_fold_idx_)
         validation_sampler_ = SubsetRandomSampler(validation_fold_idx_)
 
-        train_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=train_sampler_, num_workers=1)
-        validation_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=validation_sampler_, num_workers=1)
+        train_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=train_sampler_, num_workers=NUM_WORKERS)
+        validation_loader_ = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=validation_sampler_, num_workers=NUM_WORKERS)
+
+        test_loader_ = None
+        if (args.test):
+            test_loader_ = DataLoader(datasetTest, batch_size=1, shuffle=False, num_workers=NUM_WORKERS)
 
         log.info("Batch size is {0}".format(args.batch_size))
 
@@ -294,9 +150,11 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
         ## Log accuracies, learning rate, and loss
         epochs_ = []
         train_accuracies_ = []
+        train_losses_ = []
         validation_accuracies_ = []
         best_val_acc_ = 0.0
-        train_losses_ = []
+        test_accuracies_ = []
+        best_test_acc_ = 0.0
 
         time_start_ = timer()
         
@@ -329,6 +187,7 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
             train_losses_.append(loss_all)
             log.info("Training loss {0}".format(loss_all))
 
+            # Evaluate on training set
             model_.eval()
             correct_ = 0
 
@@ -340,10 +199,10 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
 
             correct_ /= len(train_fold_idx_)
 
-            # Log train accuracy
             train_accuracies_.append(correct_)
             log.info("Training accuracy {0}".format(correct_))
 
+            # Evaluate on validation set
             model_.eval()
             correct_ = 0
 
@@ -354,9 +213,11 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
                 correct_ += pred_.eq(batch.y).sum().item()
 
             correct_ /= len(validation_fold_idx_)
-            validation_accuracies_.append(correct_)
 
-            # Checkpoint model
+            validation_accuracies_.append(correct_)
+            log.info("Validation accuracy {0}".format(correct_))
+
+            # Checkpoint model if best validation accuracy found
             if correct_ > best_val_acc_ and args.save_ckpt:
 
                 log.info("BEST VALIDATION ACCURACY SO FAR, checkpoint model...")
@@ -366,9 +227,38 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
                 state_ = {'epoch': epoch+1,
                       'model_state': model_.state_dict(),
                       'optimizer_state': optimizer_.state_dict(),}
-                torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_fold{0}.pkl").format(epoch))
+                torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_fold{0}_val.pkl").format(fold))
 
-            log.info("Validation accuracy {0}".format(correct_))
+            # Evaluate on test set if required
+            if (args.test):
+
+                model_.eval()
+                correct_ = 0
+
+                for batch in test_loader_:
+
+                    batch = batch.to(device_)
+                    pred_ = model_(batch).max(1)[1]
+                    correct_ += pred_.eq(batch.y).sum().item()
+
+                correct_ /= len(datasetTest)
+
+                test_accuracies_.append(correct_)
+                log.info("Test accuracy {0}".format(correct_))
+
+                utils.evaluation.eval(model_, device_, test_loader_, plot=False)
+
+                # Checkpoint model if best test accuracy found
+                if correct_ > best_test_acc_ and args.save_ckpt:
+                    
+                    log.info("BEST TEST ACCURACY SO FAR, checkpoint model...")
+
+                    best_test_acc_ = correct_
+
+                    state_ = {'epoch': epoch+1,
+                          'model_state': model_.state_dict(),
+                        'optimizer_state': optimizer_.state_dict(),}
+                    torch.save(state_, (args.ckpt_path + "/" + experimentStr + "_fold{0}_test.pkl").format(fold))
 
             epochs_.append(epoch)
 
@@ -376,35 +266,69 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx):
         log.info("Training took {0} seconds".format(time_end_ - time_start_))
 
         max_accuracy_index_ = validation_accuracies_.index(max(validation_accuracies_))
+        max_test_accuracy_index_ = test_accuracies_.index(max(test_accuracies_))
 
         log.info("Maximum validation accuracy {0}".format(validation_accuracies_[max_accuracy_index_]))
         log.info("Training accuracy {0}".format(train_accuracies_[max_accuracy_index_]))
         log.info("At epoch {0}".format(max_accuracy_index_))
+
+        if (args.test):
+
+            log.info("Maximum test accuracy {0}".format(test_accuracies_[max_test_accuracy_index_]))
+            log.info("Validation accuracy {0}".format(validation_accuracies_[max_test_accuracy_index_]))
+            log.info("Training accuracy {0}".format(train_accuracies_[max_test_accuracy_index_]))
+            log.info("At epoch {0}".format(max_test_accuracy_index_))
         
         avg_train_accuracy_ += train_accuracies_[max_accuracy_index_]
         avg_validation_accuracy_ += validation_accuracies_[max_accuracy_index_]
+        avg_test_accuracy_ += test_accuracies_[max_test_accuracy_index_]
+
+        per_fold_train_accuracies_.append(train_accuracies_)
+        per_fold_losses_.append(train_losses_)
+        per_fold_validation_accuracies_.append(validation_accuracies_)
+        per_fold_test_accuracies_.append(test_accuracies_)
 
     avg_train_accuracy_ /= args.folds
     avg_validation_accuracy_ /= args.folds
+    avg_test_accuracy_ /= args.folds
 
     log.info("Average training accuracy {0}".format(avg_train_accuracy_))
     log.info("Averate validation accuracy {0}".format(avg_validation_accuracy_))
+    log.info("Averate test accuracy {0}".format(avg_test_accuracy_))
+
+    if (args.visualize_plots):
+
+        epochs_ = [i for i in range(args.epochs)]
+        labels_ = ["Fold {0}".format(i) for i in range(args.folds)]
+
+        utils.plotaccuracies.plot_accuracies(epochs_, per_fold_train_accuracies_, labels_, "Train Accuracy")
+        utils.plotaccuracies.plot_accuracies(epochs_, per_fold_validation_accuracies_, labels_, "Validation Accuracy")
+        utils.plotaccuracies.plot_accuracies(epochs_, per_fold_test_accuracies_, labels_, "Test Accuracy")
+
+        utils.plotlosses.plot_losses(epochs_, per_fold_losses_, labels_, "Train Loss")
 
 def train(args, experimentStr):
 
     biotacsp_dataset_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, split="train", normalize=args.normalize)
+    log.info("Training dataset...")
     log.info(biotacsp_dataset_)
+
+    biotacsp_dataset_test_ = None
+
+    if (args.test):
+        biotacsp_dataset_test_ = dataset.biotacsp.BioTacSp(root='data/biotacsp', k=args.graph_k, split="test", normalize=args.normalize)
+        log.info("Testing dataset...")
+        log.info(biotacsp_dataset_test_)
 
     # REMEMBER: Pass a random seed to generators when no need to replicate experiments
     random_seed_ = int(time.time())
     #random_seed_ = 32
 
-    if (args.folds > 1):
+    if (args.folds > 0):
         folds_idx_ = generated_balanced_k_folds(biotacsp_dataset_, list(range(len(biotacsp_dataset_))), args.folds, random_seed_)
-        train_kfolds(args, experimentStr, biotacsp_dataset_, folds_idx_)
+        train_kfolds(args, experimentStr, biotacsp_dataset_, folds_idx_, biotacsp_dataset_test_)
     else:
-        train_idx_, test_idx_ = generate_balanced_train_test_splits(biotacsp_dataset_, random_seed_)
-        train_traintest(args, experimentStr, biotacsp_dataset_, train_idx_, test_idx_)
+        log.info("Folds must be greater than zero...")
 
 if __name__ == "__main__":
 
@@ -412,14 +336,16 @@ if __name__ == "__main__":
     parser_.add_argument("--log_path", nargs="?", default="logs", help="Logging path")
     parser_.add_argument("--ckpt_path", nargs="?", default="ckpts", help="Path to save checkpoints")
     parser_.add_argument("--save_ckpt", nargs="?", type=bool, default=True, help="Wether or not to store the best weights")
-    parser_.add_argument("--normalize", nargs="?", type=bool, default=True, help="Normalize dataset using feature scaling")
+    parser_.add_argument("--normalize", nargs="?", type=bool, default=False, help="Normalize dataset using feature scaling")
     parser_.add_argument("--graph_k", nargs="?", type=int, default=0, help="K-Neighbours for graph connections, use 0 for manual connections")
     parser_.add_argument("--folds", nargs="?", type=int, default=5, help="Number of folds for k-fold cross validation, use 1 for no cross-validation")
     parser_.add_argument("--batch_size", nargs="?", type=int, default=1, help="Batch Size")
     parser_.add_argument("--network", nargs="?", default="GCN_test", help="The network model to train")
     parser_.add_argument("--lr", nargs="?", type=float, default=0.0001, help="Learning Rate")
     parser_.add_argument("--epochs", nargs="?", type=int, default=32, help="Training Epochs")
+    parser_.add_argument("--test", nargs="?", type=bool, default=False, help="Enables testing while training")
     parser_.add_argument("--visualize_batch", nargs="?", type=bool, default=False, help="Wether or not to display batch contour plots")
+    parser_.add_argument("--visualize_plots", nargs="?", type=bool, default=False, help="Enable visualization of learning plots")
 
     args_ = parser_.parse_args()
 

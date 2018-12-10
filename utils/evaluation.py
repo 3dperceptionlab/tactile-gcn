@@ -8,7 +8,7 @@ import utils.plotconfusionmatrix
 
 log = logging.getLogger(__name__)
 
-def eval(model, device, loader):
+def eval(model, device, loader, plot=True):
 
     ## Launch predictions on test and calculate metrics
     acc_ = 0.0
@@ -38,8 +38,9 @@ def eval(model, device, loader):
     log.info("Recall: {0}".format(rec_))
     log.info("F-score: {0}".format(fscore_))
 
-    conf_matrix_ = confusion_matrix(y_, preds_)
+    if (plot):
+        conf_matrix_ = confusion_matrix(y_, preds_)
 
-    ## Plot non-normalized confusion matrix
-    utils.plotconfusionmatrix.plot_confusion_matrix(conf_matrix_, classes=np.unique(y_),
-                        title='Confusion matrix, without normalization')
+        ## Plot non-normalized confusion matrix
+        utils.plotconfusionmatrix.plot_confusion_matrix(conf_matrix_, classes=np.unique(y_),
+                            title='Confusion matrix, without normalization')
