@@ -43,9 +43,9 @@ class BioTacSp(InMemoryDataset):
   @property
   def processed_file_names(self):
     if (self.split == "train"):
-      return ['biotacsp.pt']
+      return ["biotacsp_{0}.pt".format(self.k)]
     elif (self.split == "test"):
-      return ['biotacsp_test.pt']
+      return ["biotacsp_test_{0}.pt".format(self.k)]
     elif (self.split == None):
       return ['biotacsp_' + ''.join(self.csvs) + '.pt']
 
@@ -60,7 +60,7 @@ class BioTacSp(InMemoryDataset):
         self.raw_dir))
 
   def process(self):
-    
+
     transform_tograph_ = transforms.tograph.ToGraph(self.k)
 
     data_list_ = []
@@ -72,7 +72,7 @@ class BioTacSp(InMemoryDataset):
       grasps_ = pd.read_csv(self.raw_paths[f])
 
       for i in range(len(grasps_)):
-      
+
         sample_ = self._sample_from_csv(grasps_, i)
         sample_ = transform_tograph_(sample_)
 
@@ -97,13 +97,13 @@ class BioTacSp(InMemoryDataset):
   def _sample_from_csv(self, grasps, idx):
 
     sample_ = grasps.iloc[idx]
-    
+
     object_ = sample_.iloc[0]
     slipped_ = sample_.iloc[1]
     data_index_ = np.copy(sample_.iloc[2:26]).astype(np.int, copy=False)
     data_middle_ = np.copy(sample_.iloc[26:50]).astype(np.int, copy=False)
     data_thumb_ = np.copy(sample_.iloc[50:75]).astype(np.int, copy=False)
-    
+
     sample_ = {'object': object_,
               'slipped': slipped_,
               'data_index': data_index_,
