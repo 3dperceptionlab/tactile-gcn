@@ -103,8 +103,8 @@ def plot_contourgraph(sample):
     ax0_.set_xticks(xtics_)
     ax0_.set_yticks(ytics_)
     ax0_.set_title('Index Finger')
-    ax0_.set_ylabel('Vertical Position [cm]')
-    ax0_.set_xlabel('Horizontal Position [cm]')
+    ax0_.set_ylabel('Vertical Position [inch]')
+    ax0_.set_xlabel('Horizontal Position [inch]')
 
     z_ = matplotlib.mlab.griddata(sample['data_middle'].pos[0], sample['data_middle'].pos[1], sample['data_middle'].x, x_i_, y_i_, interp='linear')
 
@@ -116,7 +116,7 @@ def plot_contourgraph(sample):
     ax1_.set_xticks(xtics_)
     ax1_.set_yticks(ytics_)
     ax1_.set_title('Middle Finger')
-    ax1_.set_xlabel('Horizontal Position [cm]')
+    ax1_.set_xlabel('Horizontal Position [inch]')
 
     z_ = matplotlib.mlab.griddata(sample['data_thumb'].pos[0], sample['data_thumb'].pos[1], sample['data_thumb'].x, x_i_, y_i_, interp='linear')
 
@@ -128,7 +128,7 @@ def plot_contourgraph(sample):
     ax2_.set_xticks(xtics_)
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger')
-    ax2_.set_xlabel('Horizontal Position [cm]')
+    ax2_.set_xlabel('Horizontal Position [inch]')
 
     figure_.tight_layout()
 
@@ -165,8 +165,8 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax0_.set_xticks(xtics_)
     ax0_.set_yticks(ytics_)
     ax0_.set_title('Index Finger', fontsize=32)
-    ax0_.set_ylabel('Vertical Position [cm]', fontsize=32)
-    ax0_.set_xlabel('Horizontal Position [cm]', fontsize=32)
+    ax0_.set_ylabel('Vertical Position [inch]', fontsize=32)
+    ax0_.set_xlabel('Horizontal Position [inch]', fontsize=32)
 
     z_ = matplotlib.mlab.griddata(pos[:, 0], pos[:, 1], x[:, 1], x_i_, y_i_, interp='linear')
 
@@ -178,7 +178,7 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax1_.set_xticks(xtics_)
     ax1_.set_yticks(ytics_)
     ax1_.set_title('Middle Finger', fontsize=32)
-    ax1_.set_xlabel('Horizontal Position [cm]', fontsize=32)
+    ax1_.set_xlabel('Horizontal Position [inch]', fontsize=32)
 
     z_ = matplotlib.mlab.griddata(pos[:, 0], pos[:, 1], x[:, 2], x_i_, y_i_, interp='linear')
 
@@ -190,7 +190,7 @@ def plot_contourgraph_batch(pos, x, y, edgeIndex):
     ax2_.set_xticks(xtics_)
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger', fontsize=32)
-    ax2_.set_xlabel('Horizontal Position [cm]', fontsize=32)
+    ax2_.set_xlabel('Horizontal Position [inch]', fontsize=32)
 
     figure_.tight_layout()
 
@@ -226,8 +226,8 @@ def plot_contourgraph_batch_paper(pos, x, y, edgeIndex):
     ax0_.set_xticks(xtics_)
     ax0_.set_yticks(ytics_)
     ax0_.set_title('Index Finger', fontsize=32)
-    ax0_.set_ylabel('Vertical Position [cm]', fontsize=32)
-    ax0_.set_xlabel('Horizontal Position [cm]', fontsize=32)
+    ax0_.set_ylabel('Vertical Position [inch]', fontsize=32)
+    ax0_.set_xlabel('Horizontal Position [inch]', fontsize=32)
     cbar_ = figure_.colorbar(cf0_, ax=ax0_, orientation='vertical')
     cbar_.ax.tick_params(labelsize=22)
 
@@ -248,8 +248,8 @@ def plot_contourgraph_batch_paper(pos, x, y, edgeIndex):
     ax1_.set_xticks(xtics_)
     ax1_.set_yticks(ytics_)
     ax1_.set_title('Middle Finger', fontsize=20)
-    ax1_.set_ylabel('Vertical Position [cm]', fontsize=32)
-    ax1_.set_xlabel('Horizontal Position [cm]', fontsize=32)
+    ax1_.set_ylabel('Vertical Position [inch]', fontsize=32)
+    ax1_.set_xlabel('Horizontal Position [inch]', fontsize=32)
     figure_.colorbar(cf1_, ax=ax1_, orientation='vertical')
 
     figure_.savefig('contour_graph_middle_paper.png',dpi=300)
@@ -269,8 +269,8 @@ def plot_contourgraph_batch_paper(pos, x, y, edgeIndex):
     ax2_.set_xticks(xtics_)
     ax2_.set_yticks(ytics_)
     ax2_.set_title('Thumb Finger', fontsize=20)
-    ax2_.set_ylabel('Vertical Position [cm]', fontsize=20)
-    ax2_.set_xlabel('Horizontal Position [cm]', fontsize=20)
+    ax2_.set_ylabel('Vertical Position [inch]', fontsize=20)
+    ax2_.set_xlabel('Horizontal Position [inch]', fontsize=20)
     figure_.colorbar(cf2_, ax=ax2_, orientation='vertical')
 
     figure_.savefig('contour_graph_thumb_paper.png',dpi=300)
@@ -306,7 +306,7 @@ def plot_graph_3d(pos, x, y, edgeIndex):
         y_ = pos[i][1].item()
         z_ = pos[i][2].item()
         ax_.scatter(x_, y_, z_, 'bo')
-        t_ = ax_.text(x_ * (1 + 0.1), y_ * (1 + 0.1), z_ * (1 + 0.1), i, color='white',  fontsize=32, zorder=100)
+        t_ = ax_.text(x_ * (1 + 0.1), y_ * (1 + 0.1), z_ * (1 + 0.1), i + 1, color='white',  fontsize=32, zorder=100)
         t_.set_bbox(dict(facecolor='green', alpha=0.5, edgecolor='green'))
 
     figure_.savefig('graph_3d.png',dpi=300)
