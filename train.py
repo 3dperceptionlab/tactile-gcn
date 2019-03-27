@@ -15,6 +15,7 @@ import logging
 import sys
 import time
 from timeit import default_timer as timer
+from copy import deepcopy
 
 import numpy as np
 
@@ -173,13 +174,29 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
                     log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
                     visualize_batch(batch)
 
-                batch = batch.to(device_)
-                optimizer_.zero_grad()
-                output_ = model_(batch)
-                loss_ = F.nll_loss(output_, batch.y)
-                loss_.backward()
-                loss_all += batch.y.size(0) * loss_.item()
-                optimizer_.step()
+                ff_noise_std = 287
+                mf_noise_std = 197
+                th_noise_std = 236
+
+                ff_noise = np.random.randint(-ff_noise_std, high=ff_noise_std, size=batch.x[:, 0].shape)
+                mf_noise = np.random.randint(-mf_noise_std, high=mf_noise_std, size=batch.x[:, 1].shape)
+                th_noise = np.random.randint(-th_noise_std, high=th_noise_std, size=batch.x[:, 2].shape)
+                noise = np.array([ff_noise, mf_noise, th_noise]).T
+
+                augmented_batch = deepcopy(batch)
+                augmented_batch.x = augmented_batch.x + torch.from_numpy(noise).type(torch.FloatTensor)
+
+                samples = [batch, augmented_batch]
+
+                for sample in samples:
+
+                    sample = sample.to(device_)
+                    optimizer_.zero_grad()
+                    output_ = model_(sample)
+                    loss_ = F.nll_loss(output_, sample.y)
+                    loss_.backward()
+                    loss_all += sample.y.size(0) * loss_.item()
+                    optimizer_.step()
 
                 i+=1
 
@@ -266,35 +283,40 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
         log.info("Training took {0} seconds".format(time_end_ - time_start_))
 
         max_accuracy_index_ = validation_accuracies_.index(max(validation_accuracies_))
-        max_test_accuracy_index_ = test_accuracies_.index(max(test_accuracies_))
 
         log.info("Maximum validation accuracy {0}".format(validation_accuracies_[max_accuracy_index_]))
         log.info("Training accuracy {0}".format(train_accuracies_[max_accuracy_index_]))
         log.info("At epoch {0}".format(max_accuracy_index_))
 
         if (args.test):
+            max_test_accuracy_index_ = test_accuracies_.index(max(test_accuracies_))
 
             log.info("Maximum test accuracy {0}".format(test_accuracies_[max_test_accuracy_index_]))
             log.info("Validation accuracy {0}".format(validation_accuracies_[max_test_accuracy_index_]))
             log.info("Training accuracy {0}".format(train_accuracies_[max_test_accuracy_index_]))
             log.info("At epoch {0}".format(max_test_accuracy_index_))
+            
+            avg_test_accuracy_ += test_accuracies_[max_test_accuracy_index_]
+            
+            per_fold_test_accuracies_.append(test_accuracies_)
         
         avg_train_accuracy_ += train_accuracies_[max_accuracy_index_]
         avg_validation_accuracy_ += validation_accuracies_[max_accuracy_index_]
-        avg_test_accuracy_ += test_accuracies_[max_test_accuracy_index_]
 
         per_fold_train_accuracies_.append(train_accuracies_)
         per_fold_losses_.append(train_losses_)
         per_fold_validation_accuracies_.append(validation_accuracies_)
-        per_fold_test_accuracies_.append(test_accuracies_)
 
     avg_train_accuracy_ /= args.folds
     avg_validation_accuracy_ /= args.folds
-    avg_test_accuracy_ /= args.folds
 
     log.info("Average training accuracy {0}".format(avg_train_accuracy_))
     log.info("Averate validation accuracy {0}".format(avg_validation_accuracy_))
-    log.info("Averate test accuracy {0}".format(avg_test_accuracy_))
+
+    if (args.test):
+        avg_test_accuracy_ /= args.folds
+
+        log.info("Averate test accuracy {0}".format(avg_test_accuracy_))
 
     if (args.visualize_plots):
 
@@ -303,7 +325,9 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
 
         utils.plotaccuracies.plot_accuracies(epochs_, per_fold_train_accuracies_, labels_, "Train Accuracy")
         utils.plotaccuracies.plot_accuracies(epochs_, per_fold_validation_accuracies_, labels_, "Validation Accuracy")
-        utils.plotaccuracies.plot_accuracies(epochs_, per_fold_test_accuracies_, labels_, "Test Accuracy")
+
+        if (args.test):
+            utils.plotaccuracies.plot_accuracies(epochs_, per_fold_test_accuracies_, labels_, "Test Accuracy")
 
         utils.plotlosses.plot_losses(epochs_, per_fold_losses_, labels_, "Train Loss")
 
