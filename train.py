@@ -15,7 +15,6 @@ import logging
 import sys
 import time
 from timeit import default_timer as timer
-from copy import deepcopy
 
 import numpy as np
 
@@ -30,6 +29,7 @@ import loader.biotacsp_loader
 import dataset.biotacsp
 import network.utils
 import transforms.tograph
+import transforms.addnoise
 import utils.evaluation
 import utils.plotaccuracies
 import utils.plotcontour
@@ -104,6 +104,9 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
 
     log.info("Training with k={0} folds...".format(len(foldsIdx)))
 
+    if (args.aug_noise):
+        transform_addnoise_ = transforms.addnoise.AddNoise()
+
     avg_train_accuracy_ = 0.0
     avg_validation_accuracy_ = 0.0
     avg_test_accuracy_ = 0.0
@@ -174,19 +177,11 @@ def train_kfolds(args, experimentStr, dataset, foldsIdx, datasetTest=None):
                     log.info("Training batch {0} of {1}".format(i, len(dataset)/args.batch_size))
                     visualize_batch(batch)
 
-                ff_noise_std = 287
-                mf_noise_std = 197
-                th_noise_std = 236
+                samples = [batch]
 
-                ff_noise = np.random.randint(-ff_noise_std, high=ff_noise_std, size=batch.x[:, 0].shape)
-                mf_noise = np.random.randint(-mf_noise_std, high=mf_noise_std, size=batch.x[:, 1].shape)
-                th_noise = np.random.randint(-th_noise_std, high=th_noise_std, size=batch.x[:, 2].shape)
-                noise = np.array([ff_noise, mf_noise, th_noise]).T
-
-                augmented_batch = deepcopy(batch)
-                augmented_batch.x = augmented_batch.x + torch.from_numpy(noise).type(torch.FloatTensor)
-
-                samples = [batch, augmented_batch]
+                if (args.aug_noise):
+                    aug_batch_ = transform_addnoise_(batch)
+                    samples.append(aug_batch_)
 
                 for sample in samples:
 
@@ -370,6 +365,7 @@ if __name__ == "__main__":
     parser_.add_argument("--test", nargs="?", type=bool, default=False, help="Enables testing while training")
     parser_.add_argument("--visualize_batch", nargs="?", type=bool, default=False, help="Wether or not to display batch contour plots")
     parser_.add_argument("--visualize_plots", nargs="?", type=bool, default=False, help="Enable visualization of learning plots")
+    parser_.add_argument("--aug_noise", nargs="?", type=bool, default=False, help="Enable data augmentation by adding sensor noise")
 
     args_ = parser_.parse_args()
 
